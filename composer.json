@@ -1,0 +1,34 @@
+{
+    "name": "fluff/fluff",
+    "type": "library",
+    "description": "The Fluff micro framework.",
+    "keywords": ["framework", "fluff", "micro", "api"],
+    "license": "MIT",
+    "require": {
+        "php": "^7.1.3",
+        "psr/http-server-middleware": "^1.0",
+        "psr/event-dispatcher": "^1.0",
+        "php-http/message": "^1.7",
+        "beige/route": "^4.0",
+        "beige/invoker": "^1.0",
+        "beige/psr-11": "^1.0",
+        "beige/psr15": "^1.0",
+        "beige/event": "^1.0"
+    },
+    "require-dev": {
+        "nikic/fast-route": "^1.3",
+        "phpunit/phpunit": "^7.5",
+        "php-http/curl-client": "^2.0",
+        "guzzlehttp/psr7": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fluff\\": "src"
+        }
+    },
+    "suggest": {
+        "guzzlehttp/psr7": "The PSR-7 message implementation."
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
