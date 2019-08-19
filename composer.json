@@ -23,7 +23,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Fluff\\": "src"
+            "ConstanzeStandard\\Fluff\\": "src"
         }
     },
     "suggest": {
