@@ -45,7 +45,15 @@ $app->withExceptionHandler(NotFoundException::class, function() {
     return new Response(200, [], 'NotFoundException');
 });
 
-$app->get('/user', function(ServerRequestInterface $request) {
+function te(ServerRequestInterface $request) {
+    $word = $request->getAttribute('say');
+    $response = new Response(200, [], $word);
+    return $response;
+}
+
+$app->catchRoutes(__DIR__ . '/cache_route');
+
+$app->get('/user', function (ServerRequestInterface $request) {
     $word = $request->getAttribute('say');
     $response = new Response(200, [], $word);
     return $response;

@@ -13,21 +13,19 @@ use Closure;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Service\RouteService;
-use ErrorException;
-use Exception;
-use GuzzleHttp\Psr7\Response;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 
-set_error_handler(function ($severity, $message, $file, $line) {
-    if (!(error_reporting() & $severity)) {
-        // This error code is not included in error_reporting
-        return;
-    }
-    throw new ErrorException($message, 0, $severity, $file, $line);
-});
+// set_error_handler(function ($severity, $message, $file, $line) {
+//     if (!(error_reporting() & $severity)) {
+//         // This error code is not included in error_reporting
+//         return;
+//     }
+//     throw new ErrorException($message, 0, $severity, $file, $line);
+// });
 
 class Application
 {
@@ -62,6 +60,13 @@ class Application
     private $routeService;
 
     /**
+     * The default router.
+     * 
+     * @var Router
+     */
+    private $defaultRouter;
+
+    /**
      * Filters map.
      * 
      * @var array
@@ -84,6 +89,17 @@ class Application
     private $typehintHandlers = [];
 
     /**
+     * The route cache name or false.
+     * 
+     * @var string|false
+     */
+    private $routeCacheName = false;
+
+    private $controllers = [];
+
+    private $cached = false;
+
+    /**
      * The default system settings.
      *
      * @var array
@@ -91,10 +107,9 @@ class Application
     private $settings = [
         'default_controller_method' => 'index',
         'response_chunk_size' => 4096,
-        'package_base_path' => '',
-        'package_entry_file_name' => '__package__',
         'clean_output_buffer' => false,
-        'exception_handlers' => []
+        'exception_handlers' => [],
+        'route_cache' => false,
     ];
 
     /**
@@ -241,15 +256,62 @@ class Application
         $this->settings['exception_handlers'] = $values;
     }
 
+    public function route($methods, $pattern, $controller, array $conditions = [])
+    {
+        $router = $this->getDefaultRouter();
+        $router->route($methods, $pattern, $controller, $conditions);
+    }
+
+    public function group(string $prefix, array $conditions, callable $callable)
+    {
+        $router = $this->getDefaultRouter();
+        $router->group($prefix, $conditions, $callable);
+    }
+
     /**
-     * Add an route.
+     * Add a router and converting to route.
+     * 
+     * @param Router $pack
+     */
+    public function addRouter(Router $router)
+    {
+        $routes = $router->getRoutes();
+        foreach ($routes as list($methods, $pattern, $controller, $conditions)) {
+            $id = array_push($this->controllers, $controller) - 1;
+            // if (!cache)
+            if (!$this->cached || !$this->hasCache()) {
+                $this->attachRouteCollection($methods, $pattern, $id, $conditions);
+            }
+        }
+    }
+
+    private function hasCache()
+    {
+        return $this->cached && is_file($this->cached . '.php');
+    }
+
+    /**
+     * Get the default router.
+     * 
+     * @return 
+     */
+    private function getDefaultRouter(): Router
+    {
+        if (! $this->defaultRouter) {
+            $this->defaultRouter = new Router();
+        }
+        return $this->defaultRouter;
+    }
+
+    /**
+     * Add an route to collection.
      * 
      * @param array|string $methods
      * @param string $pattern
      * @param array|callable $controller
      * @param array $conditions
      */
-    public function route($methods, $pattern, $controller, array $conditions = [])
+    private function attachRouteCollection($methods, $pattern, $controller, array $conditions = [])
     {
         $routeCollection = $this->getRouteCollection();
         $routeCollection->attach($methods, $pattern, [
@@ -270,17 +332,18 @@ class Application
      */
     public function __invoke($controller, array $params = []): ?ResponseInterface
     {
-        $invoker = $this->getInvoker();
-        if (is_array($controller)) {
-            $object = $invoker->new($controller[0]);
-            $settings = $this->getSettings();
-            $controllerMethod = $settings['default_controller_method'];
-            return $invoker->callMethod($object, $controller[1] ?? $controllerMethod, $params);
-        } elseif (is_callable($controller)) {
-            return $invoker->call($controller, $params);
+        try {
+            return $this->process($controller, $params);
+        } catch (\Throwable $e) {
+            $response = $this->exceptionHandlerProcess($e);
+        } catch (\Exception $e) {
+            $response = $this->exceptionHandlerProcess($e);
         }
+    }
 
-        throw new \Exception('Controller must be string or callable object.');
+    public function catchRoutes($fileName)
+    {
+        $this->cached = $fileName;
     }
 
     /**
@@ -293,8 +356,12 @@ class Application
      */
     public function start(ServerRequestInterface $request)
     {
-        $routeCollection = $this->getRouteCollection();
-        $matcher = new Matcher($routeCollection);
+        $collection = $this->getRouteCollection();
+        $this->addRouter($this->getDefaultRouter());
+        if ($this->cached) {
+            $this->hasCache() ? $collection->loadCache($this->cached) : $collection->putCache($this->cached);
+        }
+        $matcher = new Matcher($collection);
         $method = $request->getMethod();
         /** @var MatcherResult $matcherResult */
         $matcherResult = $matcher->match($method, (string) $request->getUri());
@@ -321,7 +388,8 @@ class Application
             }
 
             $middlewares = array_merge($this->middlewares, $conditions['middlewares'] ?? []);
-            $stack = $this->getRequestHandlerStack($data['_controller'], $middlewares, $params);
+            $controller = $this->controllers[$data['_controller']];
+            $stack = $this->getRequestHandlerStack($controller, $middlewares, $params);
             $response = $stack->handle($request);
         } catch (\Throwable $e) {
             $response = $this->exceptionHandlerProcess($e);
@@ -360,6 +428,32 @@ class Application
         } else {
             static::flushOutputBuffers();
         }
+    }
+
+    /**
+     * The main process of application.
+     * Invoke the controller and inject dependencys.
+     * 
+     * @param array|callable $controller
+     * @param array $params
+     * 
+     * @throws \Exception
+     * 
+     * @return ResponseInterface|null
+     */
+    private function process($controller, array $params = []): ?ResponseInterface
+    {
+        $invoker = $this->getInvoker();
+        if (is_array($controller)) {
+            $object = $invoker->new($controller[0]);
+            $settings = $this->getSettings();
+            $controllerMethod = $settings['default_controller_method'];
+            return $invoker->callMethod($object, $controller[1] ?? $controllerMethod, $params);
+        } elseif (is_callable($controller)) {
+            return $invoker->call($controller, $params);
+        }
+
+        throw new \Exception('Controller must be string or callable object.');
     }
 
     /**
@@ -403,7 +497,7 @@ class Application
         $kernel = function (ServerRequestInterface $serverRequest) use ($controller, $params) {
             $this->typehintHandlers[ServerRequestInterface::class] = $serverRequest;
             $this->typehintHandlers[RequestInterface::class] = $serverRequest;
-            return call_user_func($this, $controller, $params);
+            return call_user_func_array([$this, 'process'], [$controller, $params]);
         };
 
         return RequestHandler::stack($kernel->bindTo($this), $middlewares);
