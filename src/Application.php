@@ -2,8 +2,10 @@
 
 namespace ConstanzeStandard\Fluff;
 
+use Beige\Invoker\Interfaces\InvokerInterface;
 use Beige\Invoker\Invoker;
 use Beige\Psr11\Container;
+use Beige\PSR15\RequestHandler;
 use Beige\Route\Collection as RouteCollection;
 use Beige\Route\Matcher;
 use Beige\Route\MatcherResult;
@@ -11,10 +13,21 @@ use Closure;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Service\RouteService;
+use ErrorException;
+use Exception;
+use GuzzleHttp\Psr7\Response;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) {
+        // This error code is not included in error_reporting
+        return;
+    }
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
 
 class Application
 {
@@ -63,6 +76,14 @@ class Application
     private $middlewares = [];
 
     /**
+     * The invoker type-hint handlers
+     * This property only be used in Application.
+     * 
+     * @var array
+     */
+    private $typehintHandlers = [];
+
+    /**
      * The default system settings.
      *
      * @var array
@@ -72,7 +93,8 @@ class Application
         'response_chunk_size' => 4096,
         'package_base_path' => '',
         'package_entry_file_name' => '__package__',
-        'clean_output_buffer' => false
+        'clean_output_buffer' => false,
+        'exception_handlers' => []
     ];
 
     /**
@@ -137,6 +159,12 @@ class Application
         if (! $this->invoker) {
             $container = $this->getContainer();
             $this->invoker = new Invoker($container);
+            $this->invoker->setDefaultTypehintHandler(function($typeName, $throwException) {
+                if (array_key_exists($typeName, $this->typehintHandlers)) {
+                    return $this->typehintHandlers[$typeName];
+                }
+                $throwException();
+            });
         }
         return $this->invoker;
     }
@@ -173,7 +201,6 @@ class Application
     public function getRouteService()
     {
         if (! $this->routeService) {
-            $container = $this->getContainer();
             $routeCollection = $this->getRouteCollection();
             $this->routeService = new RouteService($routeCollection);
         }
@@ -199,6 +226,19 @@ class Application
     public function withMiddleware(MiddlewareInterface $middleware)
     {
         $this->middlewares[] = $middleware;
+    }
+
+    /**
+     * Set exception handler with name.
+     * 
+     * @param string $name
+     * @param callable $handler
+     */
+    public function withExceptionHandler(string $name, callable $handler)
+    {
+        $values = $this->settings['exception_handlers'];
+        $values[$name] = $handler;
+        $this->settings['exception_handlers'] = $values;
     }
 
     /**
@@ -259,29 +299,35 @@ class Application
         /** @var MatcherResult $matcherResult */
         $matcherResult = $matcher->match($method, (string) $request->getUri());
 
-        if ($matcherResult->hasError()) {
-            $errorType = $matcherResult->getErrotType();
-            if ($errorType === MatcherResult::ERROR_METHOD_NOT_ALLOWED) {
-                throw new MethodNotAllowedException();
-            } elseif ($errorType === MatcherResult::ERROR_NOT_FOUND) {
+        try {
+            if ($matcherResult->hasError()) {
+                $errorType = $matcherResult->getErrotType();
+                if ($errorType === MatcherResult::ERROR_METHOD_NOT_ALLOWED) {
+                    throw new MethodNotAllowedException();
+                } elseif ($errorType === MatcherResult::ERROR_NOT_FOUND) {
+                    throw new NotFoundException();
+                }
+            }
+
+            $data = $matcherResult->getData();
+            $params = $matcherResult->getParams();
+            $conditions = $data['conditions'];
+
+            if (
+                array_key_exists('filters', $conditions) &&
+                ! $this->processFilters($request, $conditions['filters'], $params)
+            ) {
                 throw new NotFoundException();
             }
+
+            $middlewares = array_merge($this->middlewares, $conditions['middlewares'] ?? []);
+            $stack = $this->getRequestHandlerStack($data['_controller'], $middlewares, $params);
+            $response = $stack->handle($request);
+        } catch (\Throwable $e) {
+            $response = $this->exceptionHandlerProcess($e);
+        } catch (\Exception $e) {
+            $response = $this->exceptionHandlerProcess($e);
         }
-
-        $data = $matcherResult->getData();
-        $params = $matcherResult->getParams();
-        $conditions = $data['conditions'];
-
-        if (
-            array_key_exists('filters', $conditions) &&
-            ! $this->processFilters($request, $conditions['filters'], $params)
-        ) {
-            throw new NotFoundException();
-        }
-
-        $middlewares = array_merge($this->middlewares, $conditions['middlewares'] ?? []);
-        $stack = $this->getRequestHandlerStack($data['_controller'], $middlewares, $params);
-        $response = $stack->handle($request);
         $this->outputResponse($response);
     }
 
@@ -355,8 +401,8 @@ class Application
     {
         /** @var Closure $kernel */
         $kernel = function (ServerRequestInterface $serverRequest) use ($controller, $params) {
-            $params[ServerRequestInterface::class] = $serverRequest;
-            $params[RequestInterface::class] = $serverRequest;
+            $this->typehintHandlers[ServerRequestInterface::class] = $serverRequest;
+            $this->typehintHandlers[RequestInterface::class] = $serverRequest;
             return call_user_func($this, $controller, $params);
         };
 
@@ -410,6 +456,29 @@ class Application
             $length = min((int)$chunkSize, (int)$contentLength);
             $contentLength -= $length;
             yield $body->read($length);
+        }
+    }
+
+    /**
+     * Process exception handler.
+     * 
+     * @param \Throwable $e
+     * 
+     * @throws \Throwable
+     * 
+     * @return ResponseInterface
+     */
+    private function exceptionHandlerProcess(\Throwable $e): ResponseInterface
+    {
+        $className = get_class($e);
+        $settings = $this->getSettings();
+        $exceptionHandlers = $settings['exception_handlers'];
+
+        if (array_key_exists($className, $exceptionHandlers)) {
+            $handler = $exceptionHandlers[$className];
+            return $handler($e);
+        } else {
+            throw $e;
         }
     }
 }
