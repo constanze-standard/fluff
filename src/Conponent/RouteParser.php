@@ -1,13 +1,13 @@
 <?php
 
-namespace ConstanzeStandard\Fluff\Service;
+namespace ConstanzeStandard\Fluff\Conponent;
 
-use Beige\Route\Interfaces\CollectionInterface;
-use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
-use InvalidArgumentException;
 use RuntimeException;
+use InvalidArgumentException;
+use Beige\Route\Interfaces\CollectionInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 
-class RouteService implements RouteServiceInterface
+class RouteParser implements RouteParserInterface
 {
     /**
      * The route collection.
@@ -44,7 +44,7 @@ class RouteService implements RouteServiceInterface
     }
 
     /**
-     * Get the relative url by route.
+     * Get the relative url by route name.
      * 
      * @param string $name Name of route.
      * @param array $params Parameters of url.
@@ -57,7 +57,43 @@ class RouteService implements RouteServiceInterface
      */
     public function getRelativeUrlByName(string $name, array $params = [], array $queryParams = []): string
     {
-        $route = $this->routeCollection->getRoutesByData(['name' => $name], true);
+        return $this->getRelativeUrlByAttributes(
+            ['name' => $name],
+            $params,
+            $queryParams
+        );
+    }
+
+    /**
+     * Get the full url by route.
+     * 
+     * @param string $name Name of route.
+     * @param array $params Parameters of url.
+     * @param array $queryParams The query parameters.
+     * 
+     * @return string The URL.
+     */
+    public function getUrlByName(string $name, array $params = [], array $queryParams = []): string
+    {
+        $url = $this->getRelativeUrlByName($name, $params, $queryParams);
+        return $this->basePath . $url;
+    }
+
+    /**
+     * Get the relative url by attribute.
+     * 
+     * @param array $attrs attrs of route.
+     * @param array $params Parameters of url.
+     * @param array $queryParams The query parameters.
+     * 
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     * 
+     * @return string The URL.
+     */
+    private function getRelativeUrlByAttributes(array $attrs, array $params = [], array $queryParams = []): string
+    {
+        $route = $this->routeCollection->getRoutesByData($attrs, true);
         if ($route) {
             list($url, $_, $variables) = $route;
             if ($variables) {
@@ -74,20 +110,5 @@ class RouteService implements RouteServiceInterface
             return $url;
         }
         throw new RuntimeException('Route does not exist for name: ' . $name);
-    }
-
-    /**
-     * Get the full url by route.
-     * 
-     * @param string $name Name of route.
-     * @param array $params Parameters of url.
-     * @param array $queryParams The query parameters.
-     * 
-     * @return string The URL.
-     */
-    public function getUrlByName(string $name, array $params = [], array $queryParams = []): string
-    {
-        $url = $this->getRelativeUrlByName($name, $params, $queryParams);
-        return $this->basePath . $url;
     }
 }

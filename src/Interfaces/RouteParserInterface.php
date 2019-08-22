@@ -2,7 +2,7 @@
 
 namespace ConstanzeStandard\Fluff\Interfaces;
 
-interface RouteServiceInterface
+interface RouteParserInterface
 {
     /**
      * Get the relative url by route.

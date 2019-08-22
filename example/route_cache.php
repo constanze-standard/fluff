@@ -7,11 +7,11 @@
       0 => '/user/{id}',
       1 => 
       array (
-        'name' => 'user',
         '_controller' => 0,
         'conditions' => 
         array (
         ),
+        'name' => 'user',
       ),
       2 => 
       array (

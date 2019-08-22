@@ -9,7 +9,7 @@
         "psr/http-server-middleware": "^1.0",
         "psr/event-dispatcher": "^1.0",
         "php-http/message": "^1.7",
-        "beige/route": "^4.0",
+        "beige/route": "4.0.2",
         "beige/invoker": "^1.0.1",
         "beige/psr-11": "^1.0",
         "beige/psr15": "^1.0",

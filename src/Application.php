@@ -2,7 +2,6 @@
 
 namespace ConstanzeStandard\Fluff;
 
-use Beige\Invoker\Interfaces\InvokerInterface;
 use Beige\Invoker\Invoker;
 use Beige\Psr11\Container;
 use Beige\PSR15\RequestHandler;
@@ -10,14 +9,15 @@ use Beige\Route\Collection as RouteCollection;
 use Beige\Route\Matcher;
 use Beige\Route\MatcherResult;
 use Closure;
+use ConstanzeStandard\Fluff\Conponent\HttpRouteHelperTrait;
+use ConstanzeStandard\Fluff\Conponent\RouteParser;
+use ConstanzeStandard\Fluff\Conponent\Router;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
-use ConstanzeStandard\Fluff\Service\RouteService;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use RuntimeException;
 
 // set_error_handler(function ($severity, $message, $file, $line) {
 //     if (!(error_reporting() & $severity)) {
@@ -41,7 +41,7 @@ class Application
     /**
      * The type-hint invoker.
      *
-     * @var Beige\Invoker\Interfaces\InvokerInterface
+     * @var Beige\Invoker\Invoker
      */
     private $invoker;
 
@@ -55,9 +55,9 @@ class Application
     /**
      * Route service.
      * 
-     * @var ConstanzeStandard\Fluff\Parser\RouteService
+     * @var \ConstanzeStandard\Fluff\Conponent\RouteParser
      */
-    private $routeService;
+    private $routeParser;
 
     /**
      * The default router.
@@ -95,7 +95,19 @@ class Application
      */
     private $routeCacheName = false;
 
+    /**
+     * Controllers map (i.e. id => controller).
+     * 
+     * @var array
+     */
     private $controllers = [];
+
+    /**
+     * Routers list.
+     * 
+     * @var array
+     */
+    private $routers = [];
 
     /**
      * The default system settings.
@@ -165,7 +177,7 @@ class Application
     /**
      * Get the type-hint invoker.
      *
-     * @return \Beige\Invoker\Interfaces\InvokerInterface
+     * @return \Beige\Invoker\Invoker
      */
     public function getInvoker()
     {
@@ -195,7 +207,7 @@ class Application
     /**
      * Route collection.
      * 
-     * @return \Beige\Route\Interfaces\CollectionInterface
+     * @return RouteCollection
      */
     public function getRouteCollection()
     {
@@ -209,15 +221,53 @@ class Application
     /**
      * Get route service.
      * 
-     * @return \ConstanzeStandard\Fluff\Parser\RouteService
+     * @return \ConstanzeStandard\Fluff\Conponent\RouteParser
      */
-    public function getRouteService()
+    public function getRouteParser()
     {
-        if (! $this->routeService) {
+        if (! $this->routeParser) {
             $routeCollection = $this->getRouteCollection();
-            $this->routeService = new RouteService($routeCollection);
+            $this->routeParser = new RouteParser($routeCollection);
         }
-        return $this->routeService;
+        return $this->routeParser;
+    }
+
+    /**
+     * Add a router and converting to route.
+     * 
+     * @param Router $router
+     */
+    public function withRouter(Router $router)
+    {
+        $this->routers[] = $router;
+    }
+
+    /**
+     * Cache route with default router.
+     * 
+     * @param array|string $methods
+     * @param string $pattern
+     * @param array|callable $controller
+     * @param string|null $name
+     * @param array $conditions
+     */
+    public function withRoute($methods, $pattern, $controller, string $name = null, array $conditions = [])
+    {
+        $router = $this->getDefaultRouter();
+        $router->withRoute($methods, $pattern, $controller, $name, $conditions);
+    }
+
+    /**
+     * Create a route group by default router.
+     * 
+     * @param string $prefix
+     * @param array $conditions
+     * @param callable $callable
+     */
+    public function withGroup(string $prefix, array $conditions, callable $callable)
+    {
+        $router = $this->getDefaultRouter();
+        $router->withGroup($prefix, $conditions, $callable);
     }
 
     /**
@@ -242,92 +292,6 @@ class Application
     }
 
     /**
-     * Set exception handler with name.
-     * 
-     * @param string $name
-     * @param callable $handler
-     */
-    public function withExceptionHandler(string $name, callable $handler)
-    {
-        $values = $this->settings['exception_handlers'];
-        $values[$name] = $handler;
-        $this->settings['exception_handlers'] = $values;
-    }
-
-    public function route($methods, $pattern, $controller, array $conditions = [])
-    {
-        $router = $this->getDefaultRouter();
-        $router->route($methods, $pattern, $controller, $conditions);
-    }
-
-    public function group(string $prefix, array $conditions, callable $callable)
-    {
-        $router = $this->getDefaultRouter();
-        $router->group($prefix, $conditions, $callable);
-    }
-
-    /**
-     * Add a router and converting to route.
-     * 
-     * @param Router $pack
-     */
-    public function addRouter(Router $router)
-    {
-        $routes = $router->getRoutes();
-        foreach ($routes as list($methods, $pattern, $controller, $conditions)) {
-            $id = array_push($this->controllers, $controller) - 1;
-            // if (!cache)
-            if (!$this->settings['route_cache'] || !$this->hasCache()) {
-                $this->attachRouteCollection($methods, $pattern, $id, $conditions);
-            }
-        }
-    }
-
-    private function hasCache()
-    {
-        return $this->settings['route_cache'] !== false &&
-            is_file($this->settings['route_cache'] . '.php');
-    }
-
-    /**
-     * Get the default router.
-     * 
-     * @return 
-     */
-    private function getDefaultRouter(): Router
-    {
-        if (! $this->defaultRouter) {
-            $this->defaultRouter = new Router();
-        }
-        return $this->defaultRouter;
-    }
-
-    /**
-     * Add an route to collection.
-     * 
-     * @param array|string $methods
-     * @param string $pattern
-     * @param array|callable $controller
-     * @param array $conditions
-     */
-    private function attachRouteCollection($methods, $pattern, $controller, array $conditions = [])
-    {
-        $routeCollection = $this->getRouteCollection();
-        $data = [];
-        if (isset($conditions['name'])) {
-            $name = $conditions['name'];
-            unset($conditions['name']);
-            $data['name'] = $name;
-        }
-        $data += [
-            '_controller' => $controller,
-            'conditions' => $conditions
-        ];
-
-        $routeCollection->attach($methods, $pattern, $data);
-    }
-
-    /**
      * Invoke the controller and inject dependencys.
      * 
      * @param array|callable $controller
@@ -343,9 +307,8 @@ class Application
             return $this->process($controller, $params);
         } catch (\Throwable $e) {
             $response = $this->exceptionHandlerProcess($e);
-        } catch (\Exception $e) {
-            $response = $this->exceptionHandlerProcess($e);
         }
+        return $response;
     }
 
     /**
@@ -358,24 +321,16 @@ class Application
      */
     public function start(ServerRequestInterface $request)
     {
-        $collection = $this->getRouteCollection();
-        $this->addRouter($this->getDefaultRouter());
-        $routeCache = $this->settings['route_cache'];
-        if ($routeCache !== false) {
-            $this->hasCache() ? $collection->loadCache($routeCache) : $collection->putCache($routeCache);
-        }
-
-        $matcher = new Matcher($collection);
-        $method = $request->getMethod();
-        /** @var MatcherResult $matcherResult */
-        $matcherResult = $matcher->match($method, (string) $request->getUri());
+        $this->processRouters();
+        $matcher = new Matcher($this->getRouteCollectionWithCache());
+        $matcherResult = $matcher->match($request->getMethod(), (string) $request->getUri());
 
         try {
             if ($matcherResult->hasError()) {
                 $errorType = $matcherResult->getErrotType();
                 if ($errorType === MatcherResult::ERROR_METHOD_NOT_ALLOWED) {
                     throw new MethodNotAllowedException();
-                } elseif ($errorType === MatcherResult::ERROR_NOT_FOUND) {
+                } elseif (MatcherResult::ERROR_NOT_FOUND === $errorType) {
                     throw new NotFoundException();
                 }
             }
@@ -383,23 +338,17 @@ class Application
             $data = $matcherResult->getData();
             $params = $matcherResult->getParams();
             $conditions = $data['conditions'];
-
-            if (
-                array_key_exists('filters', $conditions) &&
-                ! $this->processFilters($request, $conditions['filters'], $params)
-            ) {
+            if (array_key_exists('filters', $conditions) && ! $this->processFilters($request, $conditions['filters'], $params)) {
                 throw new NotFoundException();
             }
 
             $middlewares = array_merge($this->middlewares, $conditions['middlewares'] ?? []);
-            $controller = $this->controllers[$data['_controller']];
-            $stack = $this->getRequestHandlerStack($controller, $middlewares, $params);
+            $stack = $this->getRequestHandlerStack($this->controllers[$data['_controller']], $middlewares, $params);
             $response = $stack->handle($request);
         } catch (\Throwable $e) {
             $response = $this->exceptionHandlerProcess($e);
-        } catch (\Exception $e) {
-            $response = $this->exceptionHandlerProcess($e);
         }
+
         $this->outputResponse($response);
     }
 
@@ -555,6 +504,89 @@ class Application
             $contentLength -= $length;
             yield $body->read($length);
         }
+    }
+
+    /**
+     * Add an route to collection.
+     * 
+     * @param array|string $methods
+     * @param string $pattern
+     * @param array|callable $controller
+     * @param array $conditions
+     */
+    private function attachRouteCollection($methods, $pattern, $controller, string $name, array $conditions)
+    {
+        $routeCollection = $this->getRouteCollection();
+        $data = [
+            '_controller' => $controller,
+            'conditions' => $conditions
+        ];
+        if ($name) {
+            $data['name'] = $name;
+        }
+
+        $routeCollection->attach($methods, $pattern, $data);
+    }
+
+    /**
+     * Load cache if `route_cache` is seted and return the route collection.
+     * 
+     * @return RouteCollection
+     */
+    private function getRouteCollectionWithCache()
+    {
+        $collection = $this->getRouteCollection();
+        $routeCache = $this->settings['route_cache'];
+        if ($routeCache !== false) {
+            if ($this->hasCache()) {
+                $collection->loadCache($routeCache);
+            } else {
+                $collection->putCache($routeCache);
+            }
+        }
+        return $collection;
+    }
+
+    /**
+     * Process all routers
+     */
+    private function processRouters()
+    {
+        foreach ($this->routers as $router) {
+            $routes = $router->getRoutes();
+            $needAttachCollection = !$this->settings['route_cache'] || !$this->hasCache();
+            foreach ($routes as list($methods, $pattern, $controller, $name, $conditions)) {
+                $id = array_push($this->controllers, $controller) - 1;
+                if ($needAttachCollection) {
+                    $this->attachRouteCollection($methods, $pattern, $id, $name, $conditions);
+                }
+            }
+        }
+    }
+
+    /**
+     * If has routes cache return true or false.
+     * 
+     * @return bool
+     */
+    private function hasCache()
+    {
+        return $this->settings['route_cache'] !== false &&
+            is_file($this->settings['route_cache'] . '.php');
+    }
+
+    /**
+     * Get the default router.
+     * 
+     * @return 
+     */
+    private function getDefaultRouter(): Router
+    {
+        if (! $this->defaultRouter) {
+            $this->defaultRouter = new Router();
+            $this->withRouter($this->defaultRouter);
+        }
+        return $this->defaultRouter;
     }
 
     /**

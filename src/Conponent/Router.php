@@ -1,6 +1,6 @@
 <?php
 
-namespace ConstanzeStandard\Fluff;
+namespace ConstanzeStandard\Fluff\Conponent;
 
 class Router
 {
@@ -45,23 +45,24 @@ class Router
      * @param array|string $methods
      * @param string $pattern
      * @param array|callable $controller
+     * @param string|null $name
      * @param array $conditions
      */
-    public function route($methods, $pattern, $controller, array $conditions = [])
+    public function withRoute($methods, $pattern, $controller, string $name = null, array $conditions = [])
     {
         $pattern = $this->prefix . $pattern;
         $conditions = array_merge_recursive($this->conditions, $conditions);
-        $this->routes[] = [$methods, $pattern, $controller, $conditions];
+        $this->routes[] = [$methods, $pattern, $controller, $name, $conditions];
     }
 
     /**
-     * Set a group.
+     * Create a route group.
      * 
      * @param string $prefix
      * @param array $conditions
      * @param callable $callable
      */
-    public function group(string $prefix, array $conditions, callable $callable)
+    public function withGroup(string $prefix, array $conditions, callable $callable)
     {
         $prevPrefix = $this->prefix;
         $prevConditions = $this->conditions;
