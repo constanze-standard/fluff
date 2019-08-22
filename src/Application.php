@@ -97,8 +97,6 @@ class Application
 
     private $controllers = [];
 
-    private $cached = false;
-
     /**
      * The default system settings.
      *
@@ -279,7 +277,7 @@ class Application
         foreach ($routes as list($methods, $pattern, $controller, $conditions)) {
             $id = array_push($this->controllers, $controller) - 1;
             // if (!cache)
-            if (!$this->cached || !$this->hasCache()) {
+            if (!$this->settings['route_cache'] || !$this->hasCache()) {
                 $this->attachRouteCollection($methods, $pattern, $id, $conditions);
             }
         }
@@ -287,7 +285,8 @@ class Application
 
     private function hasCache()
     {
-        return $this->cached && is_file($this->cached . '.php');
+        return $this->settings['route_cache'] !== false &&
+            is_file($this->settings['route_cache'] . '.php');
     }
 
     /**
@@ -341,11 +340,6 @@ class Application
         }
     }
 
-    public function catchRoutes($fileName)
-    {
-        $this->cached = $fileName;
-    }
-
     /**
      * Start a http process with server-side request.
      * 
@@ -358,9 +352,11 @@ class Application
     {
         $collection = $this->getRouteCollection();
         $this->addRouter($this->getDefaultRouter());
-        if ($this->cached) {
-            $this->hasCache() ? $collection->loadCache($this->cached) : $collection->putCache($this->cached);
+        $routeCache = $this->settings['route_cache'];
+        if ($routeCache !== false) {
+            $this->hasCache() ? $collection->loadCache($routeCache) : $collection->putCache($routeCache);
         }
+
         $matcher = new Matcher($collection);
         $method = $request->getMethod();
         /** @var MatcherResult $matcherResult */

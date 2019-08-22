@@ -39,7 +39,9 @@ $container = new Container([
     Test::class => new Test()
 ]);
 
-$app = new Application($container);
+$app = new Application($container, [
+    'route_cache' => __DIR__ . '/route_cache'
+]);
 
 $app->withExceptionHandler(NotFoundException::class, function() {
     return new Response(200, [], 'NotFoundException');
@@ -51,7 +53,7 @@ function te(ServerRequestInterface $request) {
     return $response;
 }
 
-$app->catchRoutes(__DIR__ . '/cache_route');
+// $app->catchRoutes(__DIR__ . '/cache_route');
 
 $app->get('/user', function (ServerRequestInterface $request) {
     $word = $request->getAttribute('say');
