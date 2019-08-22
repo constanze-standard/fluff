@@ -313,10 +313,18 @@ class Application
     private function attachRouteCollection($methods, $pattern, $controller, array $conditions = [])
     {
         $routeCollection = $this->getRouteCollection();
-        $routeCollection->attach($methods, $pattern, [
+        $data = [];
+        if (isset($conditions['name'])) {
+            $name = $conditions['name'];
+            unset($conditions['name']);
+            $data['name'] = $name;
+        }
+        $data += [
             '_controller' => $controller,
             'conditions' => $conditions
-        ]);
+        ];
+
+        $routeCollection->attach($methods, $pattern, $data);
     }
 
     /**

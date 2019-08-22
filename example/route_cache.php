@@ -1,25 +1,22 @@
 <?php return array(array (
+), array (
   'GET' => 
   array (
     0 => 
     array (
-      0 => '/user',
+      0 => '/user/{id}',
       1 => 
       array (
+        'name' => 'user',
         '_controller' => 0,
         'conditions' => 
         array (
-          'name' => 'user',
-          'middlewares' => 
-          array (
-            0 => 
-            SayHelloMiddleware::__set_state(array(
-            )),
-          ),
         ),
       ),
-      2 => false,
+      2 => 
+      array (
+        0 => 'id',
+      ),
     ),
   ),
-), array (
 ));

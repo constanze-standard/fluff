@@ -60,11 +60,13 @@ class RouteService implements RouteServiceInterface
         $route = $this->routeCollection->getRoutesByData(['name' => $name], true);
         if ($route) {
             list($url, $_, $variables) = $route;
-            foreach ($variables as $variable) {
-                if (!isset($params[$variable])) {
-                    throw new InvalidArgumentException('Missing data for URL parameter: ' . $variable);
+            if ($variables) {
+                foreach ($variables as $variable) {
+                    if (!isset($params[$variable])) {
+                        throw new InvalidArgumentException('Missing data for URL parameter: ' . $variable);
+                    }
+                    $url = str_replace("{{$variable}}", $params[$variable], $url);
                 }
-                $url = str_replace("{{$variable}}", $params[$variable], $url);
             }
             if ($queryParams) {
                 $url .= '?' . http_build_query($queryParams);

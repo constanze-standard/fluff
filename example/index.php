@@ -55,14 +55,14 @@ function te(ServerRequestInterface $request) {
 
 // $app->catchRoutes(__DIR__ . '/cache_route');
 
-$app->get('/user', function (ServerRequestInterface $request) {
+$app->get('/user/{id}', function (ServerRequestInterface $request, $id) use ($app) {
     $word = $request->getAttribute('say');
-    $response = new Response(200, [], $word);
+    $routeService = $app->getRouteService();
+    $url = $routeService->getUrlByName('user', ['id' => 234]);
+    $response = new Response(200, [], $url);
     return $response;
-}, ['name' => 'user', 'middlewares' => [
-    new SayHelloMiddleware()
-]]);
+}, ['name' => 'user']);
 
-$serverRequest = new ServerRequest('GET', '/user');
+$serverRequest = new ServerRequest('GET', '/user/123');
 
 $app->start($serverRequest);
