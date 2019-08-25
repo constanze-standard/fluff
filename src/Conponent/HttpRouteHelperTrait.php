@@ -4,23 +4,51 @@ namespace ConstanzeStandard\Fluff\Conponent;
 
 trait HttpRouteHelperTrait
 {
-    public function get($pattern, $controller, string $name = null, array $conditions = [])
+    /**
+     * Attach route to collector with `GET` method.
+     * 
+     * @param string $pattern
+     * @param \Closure|array|string $controller
+     * @param array $data
+     */
+    public function get($pattern, $controller, array $data = [])
     {
-        $this->withRoute('GET', $pattern, $controller, $name, $conditions);
+        $this->withRoute('GET', $pattern, $controller, $data);
     }
 
-    public function post($pattern, $controller, string $name = null, array $conditions = [])
+    /**
+     * Attach route to collector with `POST` method.
+     * 
+     * @param string $pattern
+     * @param \Closure|array|string $controller
+     * @param array $data
+     */
+    public function post($pattern, $controller, array $data = [])
     {
-        $this->withRoute('POST', $pattern, $controller, $name, $conditions);
+        $this->withRoute('POST', $pattern, $controller, $data);
     }
 
-    public function delete($pattern, $controller, string $name = null, array $conditions = [])
+    /**
+     * Attach route to collector with `DELETE` method.
+     * 
+     * @param string $pattern
+     * @param \Closure|array|string $controller
+     * @param array $data
+     */
+    public function delete($pattern, $controller, array $data = [])
     {
-        $this->withRoute('DELETE', $pattern, $controller, $name, $conditions);
+        $this->withRoute('DELETE', $pattern, $controller, $data);
     }
 
-    public function put($pattern, $controller, string $name = null, array $conditions = [])
+    /**
+     * Attach route to collector with `PUT` method.
+     * 
+     * @param string $pattern
+     * @param \Closure|array|string $controller
+     * @param array $data
+     */
+    public function put($pattern, $controller, array $data = [])
     {
-        $this->withRoute('PUT', $pattern, $controller, $name, $conditions);
+        $this->withRoute('PUT', $pattern, $controller, $data);
     }
 }

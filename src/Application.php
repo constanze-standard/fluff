@@ -5,15 +5,15 @@ namespace ConstanzeStandard\Fluff;
 use Beige\Invoker\Invoker;
 use Beige\Psr11\Container;
 use Beige\PSR15\RequestHandler;
-use Beige\Route\Collection as RouteCollection;
-use Beige\Route\Matcher;
-use Beige\Route\MatcherResult;
 use Closure;
 use ConstanzeStandard\Fluff\Conponent\HttpRouteHelperTrait;
+use ConstanzeStandard\Fluff\Conponent\HttpRouter;
 use ConstanzeStandard\Fluff\Conponent\RouteParser;
-use ConstanzeStandard\Fluff\Conponent\Router;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
+use ConstanzeStandard\Route\Collector;
+use ConstanzeStandard\Route\Dispatcher;
+use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -30,7 +30,6 @@ use Psr\Http\Message\ServerRequestInterface;
 class Application
 {
     use HttpRouteHelperTrait;
-
     /**
      * Globel container.
      * 
@@ -46,39 +45,11 @@ class Application
     private $invoker;
 
     /**
-     * Route collection.
-     * 
-     * @var Beige\Route\Interfaces\CollectionInterface
-     */
-    private $routeCollection;
-
-    /**
-     * Route service.
-     * 
-     * @var \ConstanzeStandard\Fluff\Conponent\RouteParser
-     */
-    private $routeParser;
-
-    /**
-     * The default router.
-     * 
-     * @var Router
-     */
-    private $defaultRouter;
-
-    /**
      * Filters map.
      * 
      * @var array
      */
     private $filtersMap = [];
-
-    /**
-     * Global middelwares.
-     * 
-     * @var array
-     */
-    private $middlewares = [];
 
     /**
      * The invoker type-hint handlers
@@ -89,25 +60,25 @@ class Application
     private $typehintHandlers = [];
 
     /**
-     * The route cache name or false.
+     * Route collection.
      * 
-     * @var string|false
+     * @var CollectionInterface
      */
-    private $routeCacheName = false;
+    private $routeCollection;
 
     /**
-     * Controllers map (i.e. id => controller).
+     * The system http router.
      * 
-     * @var array
+     * @var HttpRouter
      */
-    private $controllers = [];
+    private $httpRouter;
 
     /**
-     * Routers list.
+     * Route parser component.
      * 
-     * @var array
+     * @var RouteParser
      */
-    private $routers = [];
+    private $routeParser;
 
     /**
      * The default system settings.
@@ -175,6 +146,16 @@ class Application
     }
 
     /**
+     * Get system settings.
+     *
+     * @return array
+     */
+    public function getSettings(): array
+    {
+        return $this->settings;
+    }
+
+    /**
      * Get the type-hint invoker.
      *
      * @return \Beige\Invoker\Invoker
@@ -195,79 +176,49 @@ class Application
     }
 
     /**
-     * Get system settings.
-     *
-     * @return array
-     */
-    public function getSettings(): array
-    {
-        return $this->settings;
-    }
-
-    /**
-     * Route collection.
+     * Get the route parse component.
      * 
-     * @return RouteCollection
+     * @return RouteParser
      */
-    public function getRouteCollection()
-    {
-        if (! $this->routeCollection) {
-            $container = $this->getContainer();
-            $this->routeCollection = new RouteCollection($container);
-        }
-        return $this->routeCollection;
-    }
-
-    /**
-     * Get route service.
-     * 
-     * @return \ConstanzeStandard\Fluff\Conponent\RouteParser
-     */
-    public function getRouteParser()
+    public function getRouteParser(): RouteParser
     {
         if (! $this->routeParser) {
-            $routeCollection = $this->getRouteCollection();
-            $this->routeParser = new RouteParser($routeCollection);
+            $collection = $this->getRouteCollection();
+            $this->routeParser = new RouteParser($collection);
         }
         return $this->routeParser;
     }
 
     /**
-     * Add a router and converting to route.
-     * 
-     * @param Router $router
-     */
-    public function withRouter(Router $router)
-    {
-        $this->routers[] = $router;
-    }
-
-    /**
-     * Cache route with default router.
-     * 
+     * Add a route.
+     *
      * @param array|string $methods
      * @param string $pattern
-     * @param array|callable $controller
-     * @param string|null $name
-     * @param array $conditions
+     * @param \Closure|array|string $controller
+     * @param array $data
+     * 
+     * @throws \InvalidArgumentException
      */
-    public function withRoute($methods, $pattern, $controller, string $name = null, array $conditions = [])
+    public function withRoute($methods, string $pattern, $controller, array $data = [])
     {
-        $router = $this->getDefaultRouter();
-        $router->withRoute($methods, $pattern, $controller, $name, $conditions);
+        $httpRouter = $this->getHttpRouter();
+        $httpRouter->withRoute($methods, $pattern, $controller, $data);
     }
 
     /**
-     * Create a route group by default router.
+     * Create a route group.
      * 
-     * @param string $prefix
-     * @param array $conditions
-     * @param callable $callable
+     * @param string $pattern
+     * @param array $data
+     * @param callable $callback
      */
-    public function withGroup(string $prefix, array $conditions, callable $callable)
+    public function withGroup(string $prefixPattern, array $data = [], callable $callback)
     {
-        $router = $this->getDefaultRouter();
-        $router->withGroup($prefix, $conditions, $callable);
+        $httpRouter = $this->getHttpRouter();
+        if (array_key_exists('name', $data)) {
+            unset($data['name']);
+        }
+        $httpRouter->withGroup($prefixPattern, $data, $callback);
     }
 
     /**
@@ -282,16 +233,6 @@ class Application
     }
 
     /**
-     * Add a global middleware.
-     * 
-     * @param MiddlewareInterface $middleware
-     */
-    public function withMiddleware(MiddlewareInterface $middleware)
-    {
-        $this->middlewares[] = $middleware;
-    }
-
-    /**
      * Invoke the controller and inject dependencys.
      * 
      * @param array|callable $controller
@@ -303,12 +244,17 @@ class Application
      */
     public function __invoke($controller, array $params = []): ?ResponseInterface
     {
-        try {
-            return $this->process($controller, $params);
-        } catch (\Throwable $e) {
-            $response = $this->exceptionHandlerProcess($e);
+        $invoker = $this->getInvoker();
+        if (is_array($controller)) {
+            $object = $invoker->new($controller[0]);
+            $settings = $this->getSettings();
+            $controllerMethod = $settings['default_controller_method'];
+            return $invoker->callMethod($object, $controller[1] ?? $controllerMethod, $params);
+        } elseif (is_callable($controller)) {
+            return $invoker->call($controller, $params);
         }
-        return $response;
+
+        throw new \Exception('Controller must be string or callable object.');
     }
 
     /**
@@ -321,34 +267,30 @@ class Application
      */
     public function start(ServerRequestInterface $request)
     {
-        $this->processRouters();
-        $matcher = new Matcher($this->getRouteCollectionWithCache());
-        $matcherResult = $matcher->match($request->getMethod(), (string) $request->getUri());
+        $httpRouter = $this->getHttpRouter();
+        $result = $httpRouter->dispatch($request);
 
         try {
-            if ($matcherResult->hasError()) {
-                $errorType = $matcherResult->getErrotType();
-                if ($errorType === MatcherResult::ERROR_METHOD_NOT_ALLOWED) {
+            if ($result[0] === Dispatcher::STATUS_ERROR) {
+                $errorType = $result[1];
+                if (Dispatcher::ERROR_ALLOWED_METHODS === $errorType) {
                     throw new MethodNotAllowedException();
-                } elseif (MatcherResult::ERROR_NOT_FOUND === $errorType) {
+                } elseif (Dispatcher::ERROR_NOT_FOUND === $errorType) {
                     throw new NotFoundException();
                 }
-            }
-
-            $data = $matcherResult->getData();
-            $params = $matcherResult->getParams();
-            $conditions = $data['conditions'];
-            if (array_key_exists('filters', $conditions) && ! $this->processFilters($request, $conditions['filters'], $params)) {
+            } elseif ($result[0] === Dispatcher::STATUS_OK) {
+                list($status, $controller, $data, $params) = $result;
+                if (array_key_exists('filters', $data) && ! $this->processFilters($request, $data['filters'], $params)) {
+                    throw new NotFoundException();
+                }
+                $stack = $this->getRequestHandlerStack($controller, $data['middlewares'] ?? [], $params);
+                $response = $stack->handle($request);
+            } else {
                 throw new NotFoundException();
             }
-
-            $middlewares = array_merge($this->middlewares, $conditions['middlewares'] ?? []);
-            $stack = $this->getRequestHandlerStack($this->controllers[$data['_controller']], $middlewares, $params);
-            $response = $stack->handle($request);
         } catch (\Throwable $e) {
             $response = $this->exceptionHandlerProcess($e);
         }
-
         $this->outputResponse($response);
     }
 
@@ -381,32 +323,6 @@ class Application
         } else {
             static::flushOutputBuffers();
         }
-    }
-
-    /**
-     * The main process of application.
-     * Invoke the controller and inject dependencys.
-     * 
-     * @param array|callable $controller
-     * @param array $params
-     * 
-     * @throws \Exception
-     * 
-     * @return ResponseInterface|null
-     */
-    private function process($controller, array $params = []): ?ResponseInterface
-    {
-        $invoker = $this->getInvoker();
-        if (is_array($controller)) {
-            $object = $invoker->new($controller[0]);
-            $settings = $this->getSettings();
-            $controllerMethod = $settings['default_controller_method'];
-            return $invoker->callMethod($object, $controller[1] ?? $controllerMethod, $params);
-        } elseif (is_callable($controller)) {
-            return $invoker->call($controller, $params);
-        }
-
-        throw new \Exception('Controller must be string or callable object.');
     }
 
     /**
@@ -446,14 +362,20 @@ class Application
      */
     private function getRequestHandlerStack($controller, array $middlewares, array $params)
     {
-        /** @var Closure $kernel */
-        $kernel = function (ServerRequestInterface $serverRequest) use ($controller, $params) {
+        /** @var Closure $core */
+        $core = function (ServerRequestInterface $serverRequest) use ($controller, $params) {
             $this->typehintHandlers[ServerRequestInterface::class] = $serverRequest;
             $this->typehintHandlers[RequestInterface::class] = $serverRequest;
-            return call_user_func_array([$this, 'process'], [$controller, $params]);
+            return call_user_func($this, $controller, $params);
         };
 
-        return RequestHandler::stack($kernel->bindTo($this), $middlewares);
+        $invoker = $this->getInvoker();
+        $stack = new RequestHandler($core->bindTo($this));
+        foreach ($middlewares as $middlewareName) {
+            $middleware = $invoker->new($middlewareName);
+            $stack = $stack->addMiddleware($middleware);
+        }
+        return $stack;
     }
 
     /**
@@ -507,86 +429,33 @@ class Application
     }
 
     /**
-     * Add an route to collection.
+     * Get route collection.
      * 
-     * @param array|string $methods
-     * @param string $pattern
-     * @param array|callable $controller
-     * @param array $conditions
+     * @return CollectionInterface
      */
-    private function attachRouteCollection($methods, $pattern, $controller, string $name, array $conditions)
+    private function getRouteCollection(): CollectionInterface
     {
-        $routeCollection = $this->getRouteCollection();
-        $data = [
-            '_controller' => $controller,
-            'conditions' => $conditions
-        ];
-        if ($name) {
-            $data['name'] = $name;
+        if (!$this->routeCollection) {
+            $settings = $this->getSettings();
+            $routeCache = $settings['route_cache'];
+            $this->routeCollection = new Collector(['withCache' => $routeCache]);
         }
-
-        $routeCollection->attach($methods, $pattern, $data);
+        return $this->routeCollection;
     }
 
     /**
-     * Load cache if `route_cache` is seted and return the route collection.
+     * Get http router.
      * 
-     * @return RouteCollection
+     * @return HttpRouter
      */
-    private function getRouteCollectionWithCache()
+    private function getHttpRouter(): HttpRouter
     {
-        $collection = $this->getRouteCollection();
-        $routeCache = $this->settings['route_cache'];
-        if ($routeCache !== false) {
-            if ($this->hasCache()) {
-                $collection->loadCache($routeCache);
-            } else {
-                $collection->putCache($routeCache);
-            }
+        if (! $this->httpRouter) {
+            $collector = $this->getRouteCollection();
+            $dispacher = new Dispatcher($collector);
+            $this->httpRouter = new HttpRouter($collector, $dispacher);
         }
-        return $collection;
-    }
-
-    /**
-     * Process all routers
-     */
-    private function processRouters()
-    {
-        foreach ($this->routers as $router) {
-            $routes = $router->getRoutes();
-            $needAttachCollection = !$this->settings['route_cache'] || !$this->hasCache();
-            foreach ($routes as list($methods, $pattern, $controller, $name, $conditions)) {
-                $id = array_push($this->controllers, $controller) - 1;
-                if ($needAttachCollection) {
-                    $this->attachRouteCollection($methods, $pattern, $id, $name, $conditions);
-                }
-            }
-        }
-    }
-
-    /**
-     * If has routes cache return true or false.
-     * 
-     * @return bool
-     */
-    private function hasCache()
-    {
-        return $this->settings['route_cache'] !== false &&
-            is_file($this->settings['route_cache'] . '.php');
-    }
-
-    /**
-     * Get the default router.
-     * 
-     * @return 
-     */
-    private function getDefaultRouter(): Router
-    {
-        if (! $this->defaultRouter) {
-            $this->defaultRouter = new Router();
-            $this->withRouter($this->defaultRouter);
-        }
-        return $this->defaultRouter;
+        return $this->httpRouter;
     }
 
     /**

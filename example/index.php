@@ -40,7 +40,7 @@ $container = new Container([
 ]);
 
 $app = new Application($container, [
-    'route_cache' => __DIR__ . '/route_cache',
+    'route_cache' => __DIR__ . '/route_cache.php',
     'exception_handlers' => [
         NotFoundException::class => function() {
             return new Response(200, [], 'NotFoundException');
@@ -48,19 +48,19 @@ $app = new Application($container, [
     ]
 ]);
 
-function te(ServerRequestInterface $request) {
-    $word = $request->getAttribute('say');
-    $response = new Response(200, [], $word);
-    return $response;
-}
-
 $app->get('/user/{id}', function (ServerRequestInterface $request, $id) use ($app) {
-    $word = $request->getAttribute('say');
+    // $word = $request->getAttribute('say');
     $routeParser = $app->getRouteParser();
     $url = $routeParser->getUrlByName('user', ['id' => $id]);
+    // $say = $request->getAttribute('say');
     $response = new Response(200, [], $url);
     return $response;
-}, 'user', []);
+}, [
+    'name' => 'user',
+    'middlewares' => [
+        SayHelloMiddleware::class
+    ]
+]);
 
 $serverRequest = new ServerRequest('GET', '/user/123');
 

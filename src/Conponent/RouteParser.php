@@ -4,8 +4,8 @@ namespace ConstanzeStandard\Fluff\Conponent;
 
 use RuntimeException;
 use InvalidArgumentException;
-use Beige\Route\Interfaces\CollectionInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
+use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 
 class RouteParser implements RouteParserInterface
 {
@@ -95,7 +95,7 @@ class RouteParser implements RouteParserInterface
     {
         $route = $this->routeCollection->getRoutesByData($attrs, true);
         if ($route) {
-            list($url, $_, $variables) = $route;
+            list($url, $_, $_, $variables) = $route;
             if ($variables) {
                 foreach ($variables as $variable) {
                     if (!isset($params[$variable])) {
@@ -109,6 +109,6 @@ class RouteParser implements RouteParserInterface
             }
             return $url;
         }
-        throw new RuntimeException('Route does not exist for name: ' . $name);
+        throw new RuntimeException('Route does not exist with attributes');
     }
 }
