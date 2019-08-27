@@ -88,35 +88,25 @@ class Application
     private $settings = [
         'default_controller_method' => 'index',
         'response_chunk_size' => 4096,
-        'clean_output_buffer' => false,
+        'flush_custom_output_buffer' => false,
         'exception_handlers' => [],
         'route_cache' => false,
     ];
 
     /**
-     * Flush output buffers if the buffer is flushable.
+     * Flush or clean output buffers.
+     * 
+     * @param bool $isFlush
      */
-    private static function flushOutputBuffers()
+    private static function endOutputBuffers($isFlush)
     {
         $status = ob_get_status(true);
-        $level = ob_get_level();
-        $flushFlags = PHP_OUTPUT_HANDLER_REMOVABLE | PHP_OUTPUT_HANDLER_FLUSHABLE;
-        $cleanFlags = PHP_OUTPUT_HANDLER_REMOVABLE | PHP_OUTPUT_HANDLER_CLEANABLE;
-
-        while ($level-- > 0) {
-            $currentStatus = $status[$level];
-            if (
-                (isset($currentStatus['del']) && $currentStatus['del']) ||
-                (
-                    isset($currentStatus['flags']) &&
-                    (($currentStatus['flags'] & $flushFlags) === $flushFlags)
-                )
-            ) {
+        $level = \count($status);
+        $flags = PHP_OUTPUT_HANDLER_REMOVABLE | ($isFlush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
+        while ($level-- > 0 && ($s = $status[$level]) && (isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
+            if ($isFlush) {
                 ob_end_flush();
-            } elseif (
-                isset($currentStatus['flags']) &&
-                (($currentStatus['flags'] & $cleanFlags) === $cleanFlags)
-            ) {
+            } else {
                 ob_end_clean();
             }
         }
@@ -301,27 +291,25 @@ class Application
      */
     public function outputResponse(ResponseInterface $response)
     {
-        ob_start();
         $settings = $this->getSettings();
-        if ($settings['clean_output_buffer']) {
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-        }
+        static::endOutputBuffers($settings['flush_custom_output_buffer']);
 
+        ob_start(null, 0, PHP_OUTPUT_HANDLER_FLUSHABLE | PHP_OUTPUT_HANDLER_REMOVABLE);
         $this->respondHeader($response);
-        foreach ($this->respondContents($response) as $content) {
-            echo $content;
+        $outputHandle = fopen('php://output', 'a');
+        foreach ($this->respondContents($response) as $partOfContent) {
+            fwrite($outputHandle, $partOfContent);
             if (ob_get_level() > 0) {
                 flush();
                 ob_flush();
             }
         }
+        fclose($outputHandle);
 
         if (\function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         } else {
-            static::flushOutputBuffers();
+            static::endOutputBuffers(true);
         }
     }
 

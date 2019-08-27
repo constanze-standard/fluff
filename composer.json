@@ -1,5 +1,5 @@
 {
-    "name": "fluff/fluff",
+    "name": "constanze-standard/fluff",
     "type": "library",
     "description": "The Fluff micro framework.",
     "keywords": ["framework", "fluff", "micro", "api"],
