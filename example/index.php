@@ -28,11 +28,6 @@ class SayHelloMiddleware implements MiddlewareInterface
         $request = $request->withAttribute('say', 'hello world');
         return $handler->handle($request);
     }
-
-    public static function __set_state($array)
-    {
-        return new static;
-    }
 }
 
 $container = new Container([
@@ -40,7 +35,7 @@ $container = new Container([
 ]);
 
 $app = new Application($container, [
-    'route_cache' => __DIR__ . '/route_cache.php',
+    // 'route_cache' => __DIR__ . '/route_cache.php',
     'exception_handlers' => [
         NotFoundException::class => function() {
             return new Response(200, [], 'NotFoundException');
@@ -50,18 +45,18 @@ $app = new Application($container, [
 
 $app->get('/user/{id}', function (ServerRequestInterface $request, $id) use ($app) {
     // $word = $request->getAttribute('say');
-    $routeParser = $app->getRouteParser();
-    $url = $routeParser->getUrlByName('user', ['id' => $id]);
+    // $routeParser = $app->getRouteParser();
+    // $url = $routeParser->getUrlByName('user', ['id' => $id]);
     // $say = $request->getAttribute('say');
-    $response = new Response(200, [], $url);
+    $response = new Response(200, [], $id);
     return $response;
 }, [
     'name' => 'user',
-    'middlewares' => [
-        SayHelloMiddleware::class
-    ]
+    // 'middlewares' => [
+    //     SayHelloMiddleware::class
+    // ]
 ]);
 
-$serverRequest = new ServerRequest('GET', '/user/123');
+$serverRequest = new ServerRequest('GET', urlencode('/user/123'));
 
 $app->start($serverRequest);

@@ -8,9 +8,10 @@ use Beige\PSR15\RequestHandler;
 use Closure;
 use ConstanzeStandard\Fluff\Conponent\HttpRouteHelperTrait;
 use ConstanzeStandard\Fluff\Conponent\HttpRouter;
-use ConstanzeStandard\Fluff\Conponent\RouteParser;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
+use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
+use ConstanzeStandard\Fluff\Proxy\InvokerProxy;
 use ConstanzeStandard\Route\Collector;
 use ConstanzeStandard\Route\Dispatcher;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
@@ -74,11 +75,11 @@ class Application
     private $httpRouter;
 
     /**
-     * Route parser component.
+     * Proxy of invoker.
      * 
-     * @var RouteParser
+     * @var InvokerProxy
      */
-    private $routeParser;
+    private $invokerProxy;
 
     /**
      * The default system settings.
@@ -91,6 +92,7 @@ class Application
         'flush_custom_output_buffer' => false,
         'exception_handlers' => [],
         'route_cache' => false,
+        'host_name' => '',
     ];
 
     /**
@@ -146,37 +148,17 @@ class Application
     }
 
     /**
-     * Get the type-hint invoker.
-     *
-     * @return \Beige\Invoker\Invoker
-     */
-    public function getInvoker()
-    {
-        if (! $this->invoker) {
-            $container = $this->getContainer();
-            $this->invoker = new Invoker($container);
-            $this->invoker->setDefaultTypehintHandler(function($typeName, $throwException) {
-                if (array_key_exists($typeName, $this->typehintHandlers)) {
-                    return $this->typehintHandlers[$typeName];
-                }
-                $throwException();
-            });
-        }
-        return $this->invoker;
-    }
-
-    /**
-     * Get the route parse component.
+     * Get invoker proxy.
      * 
-     * @return RouteParser
+     * @return InvokerProxy
      */
-    public function getRouteParser(): RouteParser
+    public function getInvokerProxy(): InvokerProxy
     {
-        if (! $this->routeParser) {
-            $collection = $this->getRouteCollection();
-            $this->routeParser = new RouteParser($collection);
+        if (! $this->invokerProxy) {
+            $invoker = $this->getInvoker();
+            $this->invokerProxy = new InvokerProxy($invoker);
         }
-        return $this->routeParser;
+        return $this->invokerProxy;
     }
 
     /**
@@ -185,14 +167,35 @@ class Application
      * @param array|string $methods
      * @param string $pattern
      * @param \Closure|array|string $controller
-     * @param array $data
+     * @param array $options
      * 
      * @throws \InvalidArgumentException
      */
-    public function withRoute($methods, string $pattern, $controller, array $data = [])
+    public function withRoute($methods, string $pattern, $controller, array $options = [])
     {
         $httpRouter = $this->getHttpRouter();
-        $httpRouter->withRoute($methods, $pattern, $controller, $data);
+        $httpRouter->withRoute($methods, $pattern, $controller, $options);
+    }
+
+    /**
+     * Get http router.
+     * 
+     * @return HttpRouterInterface
+     */
+    public function getHttpRouter(): HttpRouterInterface
+    {
+        if (! $this->httpRouter) {
+            $container = $this->getContainer();
+            if ($container->has(HttpRouterInterface::class)) {
+                $this->httpRouter = $container->get(HttpRouterInterface::class);
+            } else {
+                $settings = $this->getSettings();
+                $collector = new Collector(['withCache' => $settings['route_cache']]);
+                $dispacher = new Dispatcher($collector);
+                $this->httpRouter = new HttpRouter($collector, $dispacher, $settings['host_name']);
+            }
+        }
+        return $this->httpRouter;
     }
 
     /**
@@ -202,13 +205,13 @@ class Application
      * @param array $data
      * @param callable $callback
      */
-    public function withGroup(string $prefixPattern, array $data = [], callable $callback)
+    public function withGroup(string $prefixPattern, array $options = [], callable $callback)
     {
         $httpRouter = $this->getHttpRouter();
-        if (array_key_exists('name', $data)) {
-            unset($data['name']);
+        if (array_key_exists('name', $options)) {
+            unset($options['name']);
         }
-        $httpRouter->withGroup($prefixPattern, $data, $callback);
+        $httpRouter->withGroup($prefixPattern, $options, $callback);
     }
 
     /**
@@ -263,7 +266,7 @@ class Application
         try {
             if ($result[0] === Dispatcher::STATUS_ERROR) {
                 $errorType = $result[1];
-                if (Dispatcher::ERROR_ALLOWED_METHODS === $errorType) {
+                if (Dispatcher::ERROR_METHOD_NOT_ALLOWED === $errorType) {
                     throw new MethodNotAllowedException();
                 } elseif (Dispatcher::ERROR_NOT_FOUND === $errorType) {
                     throw new NotFoundException();
@@ -417,33 +420,23 @@ class Application
     }
 
     /**
-     * Get route collection.
-     * 
-     * @return CollectionInterface
+     * Get the type-hint invoker.
+     *
+     * @return \Beige\Invoker\Interfaces\InvokerInterface
      */
-    private function getRouteCollection(): CollectionInterface
+    private function getInvoker()
     {
-        if (!$this->routeCollection) {
-            $settings = $this->getSettings();
-            $routeCache = $settings['route_cache'];
-            $this->routeCollection = new Collector(['withCache' => $routeCache]);
+        if (! $this->invoker) {
+            $container = $this->getContainer();
+            $this->invoker = new Invoker($container);
+            $this->invoker->setDefaultTypehintHandler(function($typeName, $throwException) {
+                if (array_key_exists($typeName, $this->typehintHandlers)) {
+                    return $this->typehintHandlers[$typeName];
+                }
+                $throwException();
+            });
         }
-        return $this->routeCollection;
-    }
-
-    /**
-     * Get http router.
-     * 
-     * @return HttpRouter
-     */
-    private function getHttpRouter(): HttpRouter
-    {
-        if (! $this->httpRouter) {
-            $collector = $this->getRouteCollection();
-            $dispacher = new Dispatcher($collector);
-            $this->httpRouter = new HttpRouter($collector, $dispacher);
-        }
-        return $this->httpRouter;
+        return $this->invoker;
     }
 
     /**

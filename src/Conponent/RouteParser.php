@@ -28,18 +28,9 @@ class RouteParser implements RouteParserInterface
      * 
      * @param CollectionInterface $routeCollection
      */
-    public function __construct(CollectionInterface $routeCollection)
+    public function __construct(CollectionInterface $routeCollection, $basePath = '')
     {
         $this->routeCollection = $routeCollection;
-    }
-
-    /**
-     * Set the base path of url.
-     * 
-     * @param string $basePath.
-     */
-    public function setBasePath(string $basePath)
-    {
         $this->basePath = $basePath;
     }
 
