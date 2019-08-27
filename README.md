@@ -14,7 +14,6 @@ composer install constanze-standard/fluff
 
 ## 开始使用
 ```php
-<?php
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use ConstanzeStandard\Fluff\Application;
