@@ -2,7 +2,6 @@
 
 namespace ConstanzeStandard\Fluff\Conponent;
 
-use ConstanzeStandard\Fluff\Interfaces\CollectorInterface;
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
@@ -35,7 +34,7 @@ class HttpRouter implements HttpRouterInterface
     private $routeParser;
 
     /**
-     * @param CollectorInterface $collector
+     * @param CollectionInterface $collector
      * @param DispatcherInterface $dispatcher
      */
     public function __construct(CollectionInterface $collector, DispatcherInterface $dispatcher, $hostName = '')

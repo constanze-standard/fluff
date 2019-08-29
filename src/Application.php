@@ -11,22 +11,14 @@ use ConstanzeStandard\Fluff\Conponent\HttpRouter;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
-use ConstanzeStandard\Fluff\Proxy\InvokerProxy;
 use ConstanzeStandard\Route\Collector;
 use ConstanzeStandard\Route\Dispatcher;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
+use Exception;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-
-// set_error_handler(function ($severity, $message, $file, $line) {
-//     if (!(error_reporting() & $severity)) {
-//         // This error code is not included in error_reporting
-//         return;
-//     }
-//     throw new ErrorException($message, 0, $severity, $file, $line);
-// });
 
 class Application
 {
@@ -34,7 +26,7 @@ class Application
     /**
      * Globel container.
      * 
-     * @var Psr\Container\ContainerInterface
+     * @var \Psr\Container\ContainerInterface
      */
     private $container;
 
@@ -51,6 +43,13 @@ class Application
      * @var array
      */
     private $filtersMap = [];
+
+    /**
+     * Middlewares array.
+     * 
+     * @var array
+     */
+    private $middlewares = [];
 
     /**
      * The invoker type-hint handlers
@@ -82,6 +81,13 @@ class Application
     private $invokerProxy;
 
     /**
+     * Exception handlers.
+     * 
+     * @var callable[]
+     */
+    private $exceptionHandlers = [];
+
+    /**
      * The default system settings.
      *
      * @var array
@@ -102,14 +108,22 @@ class Application
      */
     private static function endOutputBuffers($isFlush)
     {
+        if ($isFlush && \function_exists('fastcgi_finish_request')) {
+            return fastcgi_finish_request();
+        }
+
         $status = ob_get_status(true);
         $level = \count($status);
         $flags = PHP_OUTPUT_HANDLER_REMOVABLE | ($isFlush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
-        while ($level-- > 0 && ($s = $status[$level]) && (isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
-            if ($isFlush) {
-                ob_end_flush();
-            } else {
-                ob_end_clean();
+        while ($level > 0) {
+            $level--;
+            $s = $status[$level];
+            if ((isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
+                if ($isFlush) {
+                    ob_end_flush();
+                } else {
+                    ob_end_clean();
+                }
             }
         }
     }
@@ -132,7 +146,7 @@ class Application
      *
      * @return ContainerInterface
      */
-    public function getContainer()
+    public function getContainer(): ContainerInterface
     {
         return $this->container;
     }
@@ -162,22 +176,6 @@ class Application
     }
 
     /**
-     * Add a route.
-     *
-     * @param array|string $methods
-     * @param string $pattern
-     * @param \Closure|array|string $controller
-     * @param array $options
-     * 
-     * @throws \InvalidArgumentException
-     */
-    public function withRoute($methods, string $pattern, $controller, array $options = [])
-    {
-        $httpRouter = $this->getHttpRouter();
-        $httpRouter->withRoute($methods, $pattern, $controller, $options);
-    }
-
-    /**
      * Get http router.
      * 
      * @return HttpRouterInterface
@@ -199,6 +197,22 @@ class Application
     }
 
     /**
+     * Add a route.
+     *
+     * @param array|string $methods
+     * @param string $pattern
+     * @param \Closure|array|string $controller
+     * @param array $options
+     * 
+     * @throws \InvalidArgumentException
+     */
+    public function withRoute($methods, string $pattern, $controller, array $options = [])
+    {
+        $httpRouter = $this->getHttpRouter();
+        $httpRouter->withRoute($methods, $pattern, $controller, $options);
+    }
+
+    /**
      * Create a route group.
      * 
      * @param string $pattern
@@ -215,6 +229,16 @@ class Application
     }
 
     /**
+     * Add a global middleware.
+     * 
+     * @param string $middleware
+     */
+    public function withMiddleware(string $middleware)
+    {
+        $this->middlewares[] = $middleware;
+    }
+
+    /**
      * Add a filter to map.
      * 
      * @param string $name
@@ -226,28 +250,39 @@ class Application
     }
 
     /**
+     * Add a exception handler.
+     * 
+     * @param string $typeName
+     * @param callable $handler
+     */
+    public function withExceptionHandler(string $typeName, callable $handler)
+    {
+        $this->exceptionHandlers[$typeName] = $handler;
+    }
+
+    /**
      * Invoke the controller and inject dependencys.
      * 
      * @param array|callable $controller
      * @param array $params
      * 
-     * @throws \Exception
+     * @throws \InvalidArgumentException
      * 
-     * @return ResponseInterface|null
+     * @return mixed
      */
-    public function __invoke($controller, array $params = []): ?ResponseInterface
+    public function __invoke($controller, array $params = [])
     {
         $invoker = $this->getInvoker();
         if (is_array($controller)) {
             $object = $invoker->new($controller[0]);
             $settings = $this->getSettings();
-            $controllerMethod = $settings['default_controller_method'];
-            return $invoker->callMethod($object, $controller[1] ?? $controllerMethod, $params);
+            $defaultMethod = $settings['default_controller_method'];
+            return $invoker->callMethod($object, $controller[1] ?: $defaultMethod, $params);
         } elseif (is_callable($controller)) {
             return $invoker->call($controller, $params);
         }
 
-        throw new \Exception('Controller must be string or callable object.');
+        throw new \InvalidArgumentException('Controller must be array or callable.');
     }
 
     /**
@@ -264,27 +299,21 @@ class Application
         $result = $httpRouter->dispatch($request);
 
         try {
-            if ($result[0] === Dispatcher::STATUS_ERROR) {
-                $errorType = $result[1];
-                if (Dispatcher::ERROR_METHOD_NOT_ALLOWED === $errorType) {
-                    throw new MethodNotAllowedException();
-                } elseif (Dispatcher::ERROR_NOT_FOUND === $errorType) {
-                    throw new NotFoundException();
+            if ($result[0] === Dispatcher::STATUS_OK) {
+                list($_, $controller, $data, $params) = $result;
+                if ($this->verifyFilters($request, (array)($data['filters'] ?? []), $params)) {
+                    $middlewares = array_merge($this->middlewares, (array)($data['middlewares'] ?? []));
+                    return $this->outputResponse(
+                        $this->getRequestHandlerStack($controller, $middlewares, $params)->handle($request)
+                    );
                 }
-            } elseif ($result[0] === Dispatcher::STATUS_OK) {
-                list($status, $controller, $data, $params) = $result;
-                if (array_key_exists('filters', $data) && ! $this->processFilters($request, $data['filters'], $params)) {
-                    throw new NotFoundException();
-                }
-                $stack = $this->getRequestHandlerStack($controller, $data['middlewares'] ?? [], $params);
-                $response = $stack->handle($request);
-            } else {
-                throw new NotFoundException();
+            } elseif ($result[1] === Dispatcher::ERROR_METHOD_NOT_ALLOWED) {
+                throw new MethodNotAllowedException('405 Method Not Allowed.', $result[2]);
             }
+            throw new NotFoundException();
         } catch (\Throwable $e) {
-            $response = $this->exceptionHandlerProcess($e);
+            return $this->outputResponse($this->exceptionHandlerProcess($request, $e));
         }
-        $this->outputResponse($response);
     }
 
     /**
@@ -292,28 +321,25 @@ class Application
      * 
      * @param ResponseInterface $response
      */
-    public function outputResponse(ResponseInterface $response)
+    public function outputResponse(ResponseInterface $response, $flushOB = true)
     {
         $settings = $this->getSettings();
         static::endOutputBuffers($settings['flush_custom_output_buffer']);
 
-        ob_start(null, 0, PHP_OUTPUT_HANDLER_FLUSHABLE | PHP_OUTPUT_HANDLER_REMOVABLE);
+        ob_start(null, 0, PHP_OUTPUT_HANDLER_STDFLAGS);
         $this->respondHeader($response);
-        $outputHandle = fopen('php://output', 'a');
-        foreach ($this->respondContents($response) as $partOfContent) {
-            fwrite($outputHandle, $partOfContent);
-            if (ob_get_level() > 0) {
-                flush();
-                ob_flush();
+        if ($flushOB) {
+            $outputHandle = fopen('php://output', 'a');
+            foreach ($this->respondContents($response) as $partOfContent) {
+                fwrite($outputHandle, $partOfContent);
+                if (ob_get_level() > 0) {
+                    flush();
+                    ob_flush();
+                }
             }
+            fclose($outputHandle);
         }
-        fclose($outputHandle);
-
-        if (\function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        } else {
-            static::endOutputBuffers(true);
-        }
+        static::endOutputBuffers($flushOB);
     }
 
     /**
@@ -327,7 +353,7 @@ class Application
      * 
      * @return bool
      */
-    private function processFilters(ServerRequestInterface $serverRequest, array $filters, array $params)
+    private function verifyFilters(ServerRequestInterface $serverRequest, array $filters, array $params)
     {
         foreach ($filters as $name => $option) {
             $isPassed = true;
@@ -355,9 +381,16 @@ class Application
     {
         /** @var Closure $core */
         $core = function (ServerRequestInterface $serverRequest) use ($controller, $params) {
-            $this->typehintHandlers[ServerRequestInterface::class] = $serverRequest;
-            $this->typehintHandlers[RequestInterface::class] = $serverRequest;
-            return call_user_func($this, $controller, $params);
+            $this->typehintHandlers[ServerRequestInterface::class]
+                = $this->typehintHandlers[RequestInterface::class]
+                = $this->typehintHandlers[get_class($serverRequest)]
+                = $serverRequest;
+            $response = call_user_func($this, $controller, $params);
+            if ($response instanceof ResponseInterface) {
+                return $response;
+            }
+
+            throw new \TypeError('Return value of controller must be an instance of Psr\Http\Message\ResponseInterface.');
         };
 
         $invoker = $this->getInvoker();
@@ -448,17 +481,28 @@ class Application
      * 
      * @return ResponseInterface
      */
-    private function exceptionHandlerProcess(\Throwable $e): ResponseInterface
+    private function exceptionHandlerProcess(ServerRequestInterface $request, \Throwable $e): ResponseInterface
     {
+        $response = null;
         $className = get_class($e);
-        $settings = $this->getSettings();
-        $exceptionHandlers = $settings['exception_handlers'];
-
-        if (array_key_exists($className, $exceptionHandlers)) {
-            $handler = $exceptionHandlers[$className];
-            return $handler($e);
-        } else {
-            throw $e;
+        if (array_key_exists($className, $this->exceptionHandlers)) {
+            $handler = $this->exceptionHandlers[$className];
+            $response = call_user_func($handler, $request, $e);
         }
+
+        if (!$response) {
+            foreach ($this->exceptionHandlers as $className => $handler) {
+                if (is_a($e, $className)) {
+                    $response = call_user_func($handler, $request, $e);
+                    break;
+                }
+            }
+        }
+
+        if ($response instanceof ResponseInterface) {
+            return $response;
+        }
+
+        throw $e;
     }
 }

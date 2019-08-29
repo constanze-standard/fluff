@@ -1,6 +1,6 @@
 <?php
 
-namespace ConstanzeStandard\Fluff\Proxy;
+namespace ConstanzeStandard\Fluff;
 
 use Beige\Invoker\Interfaces\InvokerInterface;
 

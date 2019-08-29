@@ -26,7 +26,7 @@
       <directory suffix=".php">./src</directory>
       <exclude>
         <directory>./src/Interfaces</directory>
-        <directory>./src/Exceptions</directory>
+        <directory>./src/Exception</directory>
       </exclude>
     </whitelist>
   </filter>
