@@ -3,7 +3,7 @@
 namespace ConstanzeStandard\Fluff\Conponent;
 
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
-use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
+use ConstanzeStandard\Fluff\Service\RouteParser;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,21 +27,13 @@ class HttpRouter implements HttpRouterInterface
     private $privData = [];
 
     /**
-     * Route parser component.
-     * 
-     * @var RouteParser
-     */
-    private $routeParser;
-
-    /**
      * @param CollectionInterface $collector
      * @param DispatcherInterface $dispatcher
      */
-    public function __construct(CollectionInterface $collector, DispatcherInterface $dispatcher, $hostName = '')
+    public function __construct(CollectionInterface $collector, DispatcherInterface $dispatcher)
     {
         $this->collector = $collector;
         $this->dispatcher = $dispatcher;
-        $this->hostName = $hostName;
     }
 
     /**
@@ -79,19 +71,6 @@ class HttpRouter implements HttpRouterInterface
 
         $this->privPrefix = $prevPrefix;
         $this->privData = $privData;
-    }
-
-    /**
-     * Get the route parse component.
-     * 
-     * @return RouteParserInterface
-     */
-    public function getRouteParser(): RouteParserInterface
-    {
-        if (! $this->routeParser) {
-            $this->routeParser = new RouteParser($this->collector, $this->hostName);
-        }
-        return $this->routeParser;
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace ConstanzeStandard\Fluff\Conponent;
+namespace ConstanzeStandard\Fluff\Service;
 
 use RuntimeException;
 use InvalidArgumentException;
