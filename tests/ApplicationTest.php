@@ -130,7 +130,7 @@ class ApplicationTest extends AbstractTest
     /**
      * @expectedException \ConstanzeStandard\Fluff\Exception\MethodNotAllowedException
      */
-    public function testDispachRequestOrThrowMethodNotAllowedException()
+    public function testGetOuterRequestHandlerMethodNotAllowedException()
     {
         $app = new Application();
         /** @var ServerRequestInterface $mockRequest */
@@ -141,13 +141,14 @@ class ApplicationTest extends AbstractTest
                 Dispatcher::STATUS_ERROR, Dispatcher::ERROR_METHOD_NOT_ALLOWED, ['GET']
             ]);
         $this->setProperty($app, 'httpRouter', $httpRouter);
-        $this->callMethod($app, 'dispachRequestOrThrow', [$mockRequest]);
+        $handler = $this->callMethod($app, 'getOuterRequestHandler');
+        $handler($mockRequest);
     }
 
     /**
      * @expectedException \ConstanzeStandard\Fluff\Exception\NotFoundException
      */
-    public function testDispachRequestOrThrowNotFoundException()
+    public function testGetOuterRequestHandlerNotFoundException()
     {
         $app = new Application();
         /** @var ServerRequestInterface $mockRequest */
@@ -158,6 +159,7 @@ class ApplicationTest extends AbstractTest
                 Dispatcher::STATUS_ERROR, Dispatcher::ERROR_NOT_FOUND
             ]);
         $this->setProperty($app, 'httpRouter', $httpRouter);
-        $this->callMethod($app, 'dispachRequestOrThrow', [$mockRequest]);
+        $handler = $this->callMethod($app, 'getOuterRequestHandler');
+        $handler($mockRequest);
     }
 }

@@ -69,10 +69,9 @@ class EndOutputBuffer implements MiddlewareInterface
      * @param int $chunkSize
      * @param bool $flush
      */
-    public function __construct(int $chunkSize = 4096, $flush = true)
+    public function __construct(int $chunkSize = 4096)
     {
         $this->chunkSize = $chunkSize;
-        $this->flush = $flush;
     }
 
     /**
@@ -85,7 +84,9 @@ class EndOutputBuffer implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $response = $handler->handle($request);
-        $this->respond($response);
+        $this->respondHeader($response);
+        $isHead = strcasecmp($request->getMethod(), 'HEAD') === 0;
+        $this->respond($response, !$isHead);
         return $response;
     }
 
@@ -94,10 +95,9 @@ class EndOutputBuffer implements MiddlewareInterface
      * 
      * @param ResponseInterface $response the PSR-7 response.
      */
-    public function respond(ResponseInterface $response)
+    public function respond(ResponseInterface $response, $flush = true)
     {
-        $this->respondHeader($response);
-        if ($this->flush) {
+        if ($flush) {
             $outputHandle = fopen('php://output', 'a');
             foreach ($this->respondContents($response) as $partOfContent) {
                 fwrite($outputHandle, $partOfContent);
@@ -108,7 +108,7 @@ class EndOutputBuffer implements MiddlewareInterface
             }
             fclose($outputHandle);
         }
-        static::endOutputBuffers($this->flush);
+        static::endOutputBuffers($flush);
     }
 
     /**
