@@ -9,7 +9,7 @@ Fluff 是一个为 web 应用打造的微框架。它整合了当今主流的实
 
 ## 安装
 ```bash
-composer install constanze-standard/fluff
+composer install constanze-standard/fluff "^2.0"
 ```
 
 ## 开始使用
@@ -17,6 +17,7 @@ composer install constanze-standard/fluff
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use ConstanzeStandard\Fluff\Application;
+use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
 
 $app = new Application();
 
@@ -26,8 +27,10 @@ $app->get('/hello/{name}', function($name) {
     return $response;
 });
 
+$app->withMiddleware(new EndOutputBuffer());
+
 $app->start(new ServerRequest('GET', '/hello/world'));
 ```
 
 ## 学习 Fluff
-请前往 [fluff wiki](https://github.com/constanze-standard/fluff/wiki) 查看帮助文档。
+请前往 [Fluff 文档页](https://constanze-standard.github.io/fluff-framework-documentation/) 查看帮助文档。
