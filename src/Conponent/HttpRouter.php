@@ -18,7 +18,6 @@
 namespace ConstanzeStandard\Fluff\Conponent;
 
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
-use ConstanzeStandard\Fluff\Service\RouteParser;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
 use Psr\Http\Message\ServerRequestInterface;
