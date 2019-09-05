@@ -1,14 +1,11 @@
 <?php
 
 use ConstanzeStandard\Fluff\Conponent\HttpRouter;
-use ConstanzeStandard\Fluff\Conponent\RouteParser;
-use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
-use GuzzleHttp\Psr7\Uri;
 use Psr\Http\Message\ServerRequestInterface;
 
-require_once __DIR__ . '/AbstractTest.php';
+require_once __DIR__ . '/../AbstractTest.php';
 
 class HttpRouterTest extends AbstractTest
 {
@@ -48,32 +45,6 @@ class HttpRouterTest extends AbstractTest
         $privData = $this->getProperty($router, 'privData');
         $this->assertEquals($privPrefix, '/prefix');
         $this->assertEquals($privData, ['a' => 1]);
-    }
-
-    public function testGetRouteParserWithoutProperty()
-    {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        /** @var DispatcherInterface $dispatcher */
-        $dispatcher = $this->createMock(DispatcherInterface::class);
-        $router = new HttpRouter($collector, $dispatcher);
-        $this->setProperty($router, 'routeParser', null);
-        $result = $router->getRouteParser();
-        $this->assertInstanceOf(RouteParser::class, $result);
-    }
-
-    public function testGetRouteParserWithProperty()
-    {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        /** @var DispatcherInterface $dispatcher */
-        $dispatcher = $this->createMock(DispatcherInterface::class);
-        $router = new HttpRouter($collector, $dispatcher);
-        $routeParser = $this->createMock(RouteParserInterface::class);
-        $this->setProperty($router, 'routeParser', $routeParser);
-        $result = $router->getRouteParser();
-        $this->assertInstanceOf(RouteParserInterface::class, $result);
-        $this->assertEquals($result, $routeParser);
     }
 
     public function testDispatch()

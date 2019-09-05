@@ -1,4 +1,19 @@
 <?php
+/**
+ * Copyright 2019 Speed Sonic <blldxt@gmail.com>
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 namespace ConstanzeStandard\Fluff;
 
@@ -20,12 +35,12 @@ class Application extends RouterProxy
     /**
      * The type-hint invoker.
      *
-     * @var Beige\Invoker\Invoker
+     * @var InvokerInterface
      */
     private $invoker;
 
     /**
-     * Middlewares array.
+     * Global middlewares for application.
      * 
      * @var array
      */
@@ -33,7 +48,7 @@ class Application extends RouterProxy
 
     /**
      * The invoker type-hint handlers
-     * This property only be used in Application.
+     * Only be used in Application.
      * 
      * @var array
      */
@@ -55,7 +70,7 @@ class Application extends RouterProxy
      *
      * @return InvokerInterface
      */
-    public function getInvoker()
+    public function getInvoker(): InvokerInterface
     {
         if (! $this->invoker) {
             $this->invoker = new Invoker(
@@ -83,10 +98,10 @@ class Application extends RouterProxy
     }
 
     /**
-     * Invoke the controller and inject dependencys.
+     * Invoke the handler and inject dependencys.
      * 
      * @param ServerRequestInterface $request
-     * @param array|callable $controller
+     * @param array|callable $handler
      * @param array $params
      * @param array $options
      * 
@@ -94,26 +109,15 @@ class Application extends RouterProxy
      * 
      * @return ResponseInterface
      */
-    public function __invoke(ServerRequestInterface $request, $controller, array $params = [], array $options = []): ResponseInterface
+    public function __invoke(ServerRequestInterface $request, $handler, array $params = [], array $options = []): ResponseInterface
     {
-        $core = function (ServerRequestInterface $request) use ($controller, $params) {
+        $core = function (ServerRequestInterface $request) use ($handler, $params) {
             $this->typehintHandlers[ServerRequestInterface::class]
                 = $this->typehintHandlers[RequestInterface::class]
                 = $this->typehintHandlers[get_class($request)]
                 = $request;
 
-            $invoker = $this->getInvoker();
-            if (is_array($controller)) {
-                $instance = $invoker->new($controller[0]);
-                $method = $controller[1] ?: 'index';
-                return $invoker->callMethod($instance, $method, $params);
-            }
-
-            if (is_callable($controller)) {
-                return $invoker->call($controller, $params);
-            }
-
-            throw new \InvalidArgumentException('Controller must be array or callable.');
+            return $this->executeHandler($handler, $params);
         };
 
         $innerMiddlewares = (array)($options['middlewares'] ?? []);
@@ -135,11 +139,35 @@ class Application extends RouterProxy
     public function start(ServerRequestInterface $request): ResponseInterface
     {
         $routerRequesthandler = function (ServerRequestInterface $request) {
-            list($controller, $options, $params) = $this->dispachRequest($request);
-            return call_user_func($this, $request, $controller, $params, $options);
+            list($handler, $options, $params) = $this->dispachRequestOrThrow($request);
+            return call_user_func($this, $request, $handler, $params, $options);
         };
         $requestHandler = RequestHandler::stack($routerRequesthandler, $this->outerMiddlewares);
         return $requestHandler->handle($request);
+    }
+
+    /**
+     * Call handler with type-hint injection.
+     * 
+     * @param array|callable $hadnler
+     * @param array $params
+     * 
+     * @return ResponseInterface
+     */
+    private function executeHandler($hadnler, array $params = [])
+    {
+        $invoker = $this->getInvoker();
+        if (is_array($hadnler)) {
+            $instance = $invoker->new($hadnler[0]);
+            $method = $hadnler[1] ?: 'index';
+            return $invoker->callMethod($instance, $method, $params);
+        }
+
+        if (is_callable($hadnler)) {
+            return $invoker->call($hadnler, $params);
+        }
+
+        throw new \InvalidArgumentException('Controller must be array or callable.');
     }
 
     /**
@@ -150,15 +178,15 @@ class Application extends RouterProxy
      * @throws MethodNotAllowedException
      * @throws NotFoundException
      * 
-     * @return array [$controller, $options, $params]
+     * @return array [$handler, $options, $params]
      */
-    private function dispachRequest(ServerRequestInterface $request)
+    private function dispachRequestOrThrow(ServerRequestInterface $request)
     {
         $result = $this->getHttpRouter()->dispatch($request);
         if ($result[0] === Dispatcher::STATUS_OK) {
-            list($_, $controller, $options, $params) = $result;
+            list($_, $handler, $options, $params) = $result;
             if ($this->verifyFilters($request, (array)($options['filters'] ?? []), $params)) {
-                return [$controller, $options, $params];
+                return [$handler, $options, $params];
             }
         } elseif ($result[1] === Dispatcher::ERROR_METHOD_NOT_ALLOWED) {
             throw new MethodNotAllowedException('405 Method Not Allowed.', $result[2]);

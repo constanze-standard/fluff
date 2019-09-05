@@ -1,4 +1,19 @@
 <?php
+/**
+ * Copyright 2019 Speed Sonic <blldxt@gmail.com>
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 namespace ConstanzeStandard\Fluff;
 
@@ -38,7 +53,7 @@ class RouterProxy implements RouteableInterface
      * 
      * @var HttpRouterInterface
      */
-    private $httpRouter = [];
+    protected $httpRouter = [];
 
     /**
      * Route collection.
@@ -83,7 +98,6 @@ class RouterProxy implements RouteableInterface
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->settings = $container->has('settings') ? $container->get('settings') : [];
     }
 
     /**
@@ -122,7 +136,8 @@ class RouterProxy implements RouteableInterface
             if ($container->has(RouteParserInterface::class)) {
                 $this->routeParser = $container->get(RouteParserInterface::class);
             } else {
-                $basePath = $this->settings['base_path'] ?? '';
+                $settings = $this->getSettings();
+                $basePath = $settings['base_path'] ?? '';
                 $this->routeParser = new RouteParser($this->getRouteCollection(), $basePath);
             }
         }
@@ -185,7 +200,7 @@ class RouterProxy implements RouteableInterface
     {
         foreach ($filters as $name => $option) {
             $isPassed = true;
-            if (array_key_exists($name, $this->filtersMap)) {
+            if (is_string($name) && array_key_exists($name, $this->filtersMap)) {
                 $filter = $this->filtersMap[$name];
                 $isPassed = $filter($serverRequest, $option, $params);
             } elseif (is_callable($option)) {
@@ -196,6 +211,19 @@ class RouterProxy implements RouteableInterface
             }
         }
         return true;
+    }
+
+    /**
+     * Get current settings.
+     * 
+     * @return array
+     */
+    private function getSettings()
+    {
+        if (! $this->settings) {
+            $this->settings = $this->container->has('settings') ? $this->container->get('settings') : [];
+        }
+        return $this->settings;
     }
 
     /**
@@ -228,7 +256,8 @@ class RouterProxy implements RouteableInterface
             if ($container->has(CollectionInterface::class)) {
                 $this->routeCollection = $container->get(CollectionInterface::class);
             } else {
-                $withCache = $this->settings['route_cache'] ?? false;
+                $settings = $this->getSettings();
+                $withCache = $settings['route_cache'] ?? false;
                 $this->routeCollection = new Collector(['withCache' => $withCache]);
             }
         }

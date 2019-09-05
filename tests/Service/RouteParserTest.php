@@ -1,9 +1,9 @@
 <?php
 
-use ConstanzeStandard\Fluff\Conponent\RouteParser;
+use ConstanzeStandard\Fluff\Service\RouteParser;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 
-require_once __DIR__ . '/AbstractTest.php';
+require_once __DIR__ . '/../AbstractTest.php';
 
 class RouteParserTest extends AbstractTest
 {
