@@ -17,8 +17,8 @@
 
 namespace ConstanzeStandard\Fluff;
 
-use ConstanzeStandard\Fluff\Conponent\HttpRouteHelperTrait;
-use ConstanzeStandard\Fluff\Conponent\HttpRouter;
+use ConstanzeStandard\Fluff\Component\HttpRouteHelperTrait;
+use ConstanzeStandard\Fluff\Component\HttpRouter;
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteableInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;

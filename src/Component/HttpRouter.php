@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Conponent;
+namespace ConstanzeStandard\Fluff\Component;
 
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;

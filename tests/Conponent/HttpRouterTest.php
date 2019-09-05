@@ -1,6 +1,6 @@
 <?php
 
-use ConstanzeStandard\Fluff\Conponent\HttpRouter;
+use ConstanzeStandard\Fluff\Component\HttpRouter;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
 use Psr\Http\Message\ServerRequestInterface;

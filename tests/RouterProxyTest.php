@@ -1,7 +1,7 @@
 <?php
 
 use Beige\Psr11\Container;
-use ConstanzeStandard\Fluff\Conponent\HttpRouter;
+use ConstanzeStandard\Fluff\Component\HttpRouter;
 use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\RouterProxy;

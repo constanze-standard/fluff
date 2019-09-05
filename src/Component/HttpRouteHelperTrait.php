@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Conponent;
+namespace ConstanzeStandard\Fluff\Component;
 
 trait HttpRouteHelperTrait
 {

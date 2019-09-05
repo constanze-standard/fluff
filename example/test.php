@@ -1,6 +1,6 @@
 <?php
 
-use ConstanzeStandard\Fluff\Conponent\HttpRouter;
+use ConstanzeStandard\Fluff\Component\HttpRouter;
 use ConstanzeStandard\Route\Collector;
 use ConstanzeStandard\Route\Dispatcher;
 use GuzzleHttp\Psr7\ServerRequest;
