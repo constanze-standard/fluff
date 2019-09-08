@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2019 Speed Sonic <blldxt@gmail.com>
+ * Copyright 2019 Alex <blldxt@gmail.com>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,179 +18,115 @@
 
 namespace ConstanzeStandard\Fluff;
 
-use Beige\Invoker\Interfaces\InvokerInterface;
-use Beige\Invoker\Invoker;
-use Beige\Psr11\Container;
-use Beige\PSR15\RequestHandler;
-use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
-use ConstanzeStandard\Fluff\Exception\NotFoundException;
-use ConstanzeStandard\Route\Dispatcher;
+use ConstanzeStandard\Fluff\Component\HttpRouteHelperTrait;
+use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
+use ConstanzeStandard\Fluff\RequestHandler\DefaultRequestHandler;
+use ConstanzeStandard\RequestHandler\Dispatcher as RequestDispatcher;
 use Psr\Container\ContainerInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class Application extends RouterProxy
+class Application implements RequestHandlerInterface
 {
-    /**
-     * The type-hint invoker.
-     *
-     * @var InvokerInterface
-     */
-    private $invoker;
+    use HttpRouteHelperTrait;
 
     /**
-     * Global middlewares for application.
+     * The request disptcher.
      * 
-     * @var array
+     * @var RequestDispatcher
      */
-    private $outerMiddlewares = [];
+    private $requestDispatcher;
 
     /**
-     * The invoker type-hint handlers
-     * Only be used in Application.
-     * 
-     * @var array
+     * @var RouterMiddleware
      */
-    private $typehintHandlers = [];
+    private $routerMiddleware;
 
     /**
      * Application constructor.
-     * set the custom container and http router.
+     * set the custom container.
      *
      * @param ContainerInterface $container
      */
-    public function __construct(ContainerInterface $container = null)
+    public function __construct(RequestHandlerInterface $requestHandler = null)
     {
-        parent::__construct($container ?? new Container());
+        $requestHandler = $requestHandler ?? new DefaultRequestHandler();
+        $this->requestDispatcher = new RequestDispatcher($requestHandler);
+        $this->routerMiddleware = new RouterMiddleware();
+        $this->addMiddleware($this->routerMiddleware);
     }
 
     /**
-     * Get the type-hint invoker.
-     *
-     * @return InvokerInterface
-     */
-    public function getInvoker(): InvokerInterface
-    {
-        if (! $this->invoker) {
-            $this->invoker = new Invoker(
-                $this->getContainer(), function($typeName, $throwException) {
-                if (array_key_exists($typeName, $this->typehintHandlers)) {
-                    return $this->typehintHandlers[$typeName];
-                }
-                $throwException();
-            });
-        }
-        return $this->invoker;
-    }
-
-    /**
-     * Add a global middleware.
+     * Get router middleware.
      * 
-     * @param MiddlewareInterface[] $middleware
+     * @return RouterMiddleware
+     */
+    public function getRouterMiddleware()
+    {
+        return $this->routerMiddleware;
+    }
+
+    /**
+     * Add a middleware.
+     * 
+     * @param MiddlewareInterface $middleware
      * 
      * @return MiddlewareInterface
      */
-    public function withMiddleware(MiddlewareInterface $middleware)
+    public function addMiddleware(MiddlewareInterface $middleware)
     {
-        $this->outerMiddlewares[] = $middleware;
+        $this->requestDispatcher->addMiddleware($middleware);
         return $middleware;
     }
 
     /**
-     * Invoke the handler and inject dependencys.
+     * Dispatch the request to middlewares.
      * 
      * @param ServerRequestInterface $request
-     * @param array|callable $handler
-     * @param array $params
-     * @param array $options
+     * 
+     * @return ResponseInterface
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $response = $this->requestDispatcher->handle($request);
+
+        if (strcasecmp($request->getMethod(), 'HEAD') === 0) {
+            $body = $request->getBody();
+            if ($body->isWritable() && $body->isSeekable()) {
+                $body->rewind();
+                $body->write('');
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Attach data to collection.
+     *
+     * @param array|string $methods
+     * @param string $pattern
+     * @param callable|array $handler
+     * @param array $middlewares
+     * @param string|null $name
      * 
      * @throws \InvalidArgumentException
-     * 
-     * @return ResponseInterface
      */
-    public function __invoke(ServerRequestInterface $request, $handler, array $params = [], array $middlewares = []): ResponseInterface
+    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null)
     {
-        $innerRequestHandler = $this->getInnerRequestHandler($handler, $params);
-        $requestHandler = RequestHandler::stack($innerRequestHandler, $middlewares);
-        return $requestHandler->handle($request);
+        $this->routerMiddleware->withRoute($methods, $pattern, $handler, $middlewares, $name);
     }
 
     /**
-     * Start a http process with server-side request.
+     * Create a route group.
      * 
-     * @param ServerRequestInterface $request
-     * 
-     * @throws MethodNotAllowedException
-     * @throws NotFoundException
-     * 
-     * @return ResponseInterface
+     * @param string $prefixPattern
+     * @param array $middlewares
+     * @param callable $callback
      */
-    public function start(ServerRequestInterface $request): ResponseInterface
+    public function withGroup(string $prefixPattern, array $middlewares = [], callable $callback)
     {
-        $outerRequesthandler = $this->getOuterRequestHandler();
-        $requestHandler = RequestHandler::stack($outerRequesthandler, $this->outerMiddlewares);
-        return $requestHandler->handle($request);
-    }
-
-    /**
-     * Get the outer request handler core.
-     * @see https://github.com/constanze-standard/router/blob/master/README.md
-     * 
-     * @throws MethodNotAllowedException
-     * @throws NotFoundException
-     * 
-     * @return \Closure The outer request handler core.
-     */
-    private function getOuterRequestHandler()
-    {
-        return function (ServerRequestInterface $request) {
-            $result = $this->getHttpRouter()->dispatch($request);
-            if ($result[0] === Dispatcher::STATUS_OK) {
-                list($_, $handler, $options, $params) = $result;
-                if ($this->verifyFilters($request, (array)($options['filters'] ?? []), $params)) {
-                    $innerMiddlewares = (array)($options['middlewares'] ?? []);
-                    return call_user_func($this, $request, $handler, $params, $innerMiddlewares);
-                }
-            } elseif ($result[1] === Dispatcher::ERROR_METHOD_NOT_ALLOWED) {
-                throw new MethodNotAllowedException('405 Method Not Allowed.', $result[2]);
-            }
-
-            throw new NotFoundException('404 Not Found.');
-        };
-    }
-
-    /**
-     * Get the inner request handler core.
-     * 
-     * @param callable|array $handler
-     * @param array $params
-     * 
-     * @throws \InvalidArgumentException If the handler type is not match.
-     * 
-     * @return \Closure The inner request handler core.
-     */
-    private function getInnerRequestHandler($handler, array $params)
-    {
-        return function(ServerRequestInterface $request) use ($handler, $params) {
-            $this->typehintHandlers[ServerRequestInterface::class]
-                = $this->typehintHandlers[RequestInterface::class]
-                = $this->typehintHandlers[get_class($request)]
-                = $request;
-
-            $invoker = $this->getInvoker();
-
-            if (is_array($handler)) {
-                $instance = $invoker->new($handler[0]);
-                return $invoker->callMethod($instance, $handler[1] ?? 'index', $params);
-            }
-    
-            if (is_callable($handler)) {
-                return $invoker->call($handler, $params);
-            }
-    
-            throw new \InvalidArgumentException('Controller must be array or callable.');
-        };
+        $this->routerMiddleware->withGroup($prefixPattern, $middlewares, $callback);
     }
 }

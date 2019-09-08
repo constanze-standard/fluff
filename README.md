@@ -1,6 +1,6 @@
 # Fluff
 
-[![GitHub license](https://img.shields.io/github/license/alienwow/SnowLeopard.svg)](https://github.com/alienwow/SnowLeopard/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
 
 ## 关于 Fluff
 Fluff 是一个为 web 应用打造的微框架。它整合了当今主流的实践标准，帮助你实现高可用性的应用程序。

@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2019 Speed Sonic <blldxt@gmail.com>
+ * Copyright 2019 Alex <blldxt@gmail.com>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+ * Catch exceptions and make error response.
+ * 
+ * @author Alex <blldxt@gmail.com>
+ */
 class ExceptionCaptor implements MiddlewareInterface
 {
     /**

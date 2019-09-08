@@ -3,7 +3,7 @@
     "type": "library",
     "description": "The Fluff micro framework.",
     "keywords": ["framework", "fluff", "micro", "api"],
-    "license": "MIT",
+    "license": "Apache-2.0",
     "require": {
         "php": "^7.1.3",
         "psr/http-server-middleware": "^1.0",
@@ -12,7 +12,8 @@
         "beige/invoker": "^2.0",
         "beige/psr-11": "^1.0",
         "beige/psr15": "^1.0",
-        "constanze-standard/router": "^1.0"
+        "constanze-standard/router": "^1.0",
+        "constanze-standard/request-handler": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.5",

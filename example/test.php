@@ -3,20 +3,18 @@
 use ConstanzeStandard\Fluff\Component\HttpRouter;
 use ConstanzeStandard\Route\Collector;
 use ConstanzeStandard\Route\Dispatcher;
+use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-class A
-{
-    public function aa()
-    {
-        echo 123;
-    }
-}
+$routerMiddlware = $app->withMiddleware(new RouterMiddleware($app));
 
-function test(callable $handler) {
-    print_r($handler);
-}
+$router = $routerMiddlware->getRouter();
 
-test([new A, 'aa']);
+$router->get('/user', function() {
+    return new Response();
+});
+
+$request = new ServerRequest('GET', '/user');
+$routerMiddlware->start($request);
