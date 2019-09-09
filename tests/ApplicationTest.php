@@ -1,165 +1,52 @@
 <?php
 
-use Beige\Invoker\Interfaces\InvokerInterface;
-use Beige\Invoker\Invoker;
 use ConstanzeStandard\Fluff\Application;
-use ConstanzeStandard\Fluff\Interfaces\HttpRouterInterface;
-use ConstanzeStandard\Route\Dispatcher;
-use GuzzleHttp\Psr7\Response;
+use ConstanzeStandard\RequestHandler\Interfaces\MiddlewareDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 require_once __DIR__ . '/AbstractTest.php';
 
 class ApplicationTest extends AbstractTest
 {
-    public function testWithMiddleware()
+    public function testAddMiddleware()
     {
-        $app = new Application();
+        /** @var RequestHandlerInterface $requestHandler */
         /** @var MiddlewareInterface $middleware */
+
+        $requestHandler = $this->createMock(RequestHandlerInterface::class);
         $middleware = $this->createMock(MiddlewareInterface::class);
-        $app->withMiddleware($middleware);
-        $outerMiddlewares = $this->getProperty($app, 'outerMiddlewares');
-        $this->assertEquals([$middleware], $outerMiddlewares);
+        $middlewareDispatcher = $this->createMock(MiddlewareDispatcherInterface::class);
+        $middlewareDispatcher->expects($this->once())->method('addMiddleware')->willReturn($middleware);
+        $app = new Application($requestHandler);
+        $this->setProperty($app, 'middlewareDispatcher', $middlewareDispatcher);
+        $app->addMiddleware($middleware);
     }
 
-    public function testGetInvokerWithProperty()
+    public function testHandle()
     {
-        $app = new Application();
-        /** @var InvokerInterface $middleware */
-        $invoker = $this->createMock(InvokerInterface::class);
-        $this->setProperty($app, 'invoker', $invoker);
-        $result = $app->getInvoker();
-        $this->assertEquals($result, $invoker);
-    }
+        /** @var RequestHandlerInterface $requestHandler */
+        /** @var MiddlewareInterface $middleware */
+        /** @var ServerRequestInterface $request */
 
-    public function testGetInvokerWithoutProperty()
-    {
-        $app = new Application();
-        $result = $app->getInvoker();
-        $this->assertInstanceOf(Invoker::class, $result);
-    }
-
-    public function testTypehintHandlers()
-    {
-        $app = new Application();
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        $this->setProperty($app, 'typehintHandlers', [
-            ServerRequestInterface::class => $mockRequest
-        ]);
-        $invoker = $app->getInvoker();
-        $invoker->call(function (ServerRequestInterface $request) use ($mockRequest) {
-            $this->assertInstanceOf(ServerRequestInterface::class, $request);
-            $this->assertEquals($mockRequest, $request);
-        });
-    }
-
-    /**
-     * @expectedException \Exception
-     */
-    public function testTypehintHandlersThrowException()
-    {
-        $app = new Application();
-        $invoker = $app->getInvoker();
-        $invoker->call(function (Nothing $nothing) {});
-    }
-
-    public function testInvokeCallable()
-    {
-        $app = new Application();
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        /** @var ResponseInterface $mockResponse */
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $result = $app->__invoke($mockRequest, function() use ($mockResponse) {
-            return $mockResponse;
-        });
-        $this->assertEquals($mockResponse, $result);
-    }
-
-    public function testInvokeArray()
-    {
-        $app = new Application();
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        /** @var ResponseInterface $mockResponse */
-        $mockResponse = $this->createMock(ResponseInterface::class);
-
-        $cls = new class {
-            public function index() {
-                $response = new Response();
-                return $response;
-            }
-        };
-        $result = $app->__invoke($mockRequest, [get_class($cls), 'index']);
-        $this->assertInstanceOf(Response::class, $result);
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testInvokeException()
-    {
-        $app = new Application();
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        $result = $app->__invoke($mockRequest, 'nothing');
-    }
-
-    public function testStart()
-    {
-        $app = new Application();
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        /** @var ResponseInterface $mockResponse */
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $handler = function() use ($mockResponse) {
-            return $mockResponse;
-        };
-        $httpRouter = $this->createMock(HttpRouterInterface::class);
-        $httpRouter->expects($this->once())->method('dispatch')
-            ->willReturn([
-                Dispatcher::STATUS_OK, $handler, [], []
-            ]);
-        $this->setProperty($app, 'httpRouter', $httpRouter);
-        $result = $app->start($mockRequest);
-        $this->assertEquals($mockResponse, $result);
-    }
-
-    /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\MethodNotAllowedException
-     */
-    public function testGetOuterRequestHandlerMethodNotAllowedException()
-    {
-        $app = new Application();
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        $httpRouter = $this->createMock(HttpRouterInterface::class);
-        $httpRouter->expects($this->once())->method('dispatch')
-            ->willReturn([
-                Dispatcher::STATUS_ERROR, Dispatcher::ERROR_METHOD_NOT_ALLOWED, ['GET']
-            ]);
-        $this->setProperty($app, 'httpRouter', $httpRouter);
-        $handler = $this->callMethod($app, 'getOuterRequestHandler');
-        $handler($mockRequest);
-    }
-
-    /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\NotFoundException
-     */
-    public function testGetOuterRequestHandlerNotFoundException()
-    {
-        $app = new Application();
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        $httpRouter = $this->createMock(HttpRouterInterface::class);
-        $httpRouter->expects($this->once())->method('dispatch')
-            ->willReturn([
-                Dispatcher::STATUS_ERROR, Dispatcher::ERROR_NOT_FOUND
-            ]);
-        $this->setProperty($app, 'httpRouter', $httpRouter);
-        $handler = $this->callMethod($app, 'getOuterRequestHandler');
-        $handler($mockRequest);
+        $response = $this->createMock(ResponseInterface::class);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())->method('getMethod')->willReturn('HEAD');
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->expects($this->once())->method('isWritable')->willReturn(true);
+        $stream->expects($this->once())->method('isSeekable')->willReturn(true);
+        $stream->expects($this->once())->method('rewind');
+        $stream->expects($this->once())->method('write');
+        $request->expects($this->once())->method('getBody')->willReturn($stream);
+        $requestHandler = $this->createMock(RequestHandlerInterface::class);
+        $middlewareDispatcher = $this->createMock(MiddlewareDispatcherInterface::class);
+        $middlewareDispatcher->expects($this->once())->method('handle')->with($request)->willReturn($response);
+        $app = new Application($requestHandler);
+        $this->setProperty($app, 'middlewareDispatcher', $middlewareDispatcher);
+        $result = $app->handle($request);
+        $this->assertEquals($response, $result);
     }
 }

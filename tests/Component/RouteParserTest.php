@@ -1,6 +1,6 @@
 <?php
 
-use ConstanzeStandard\Fluff\Service\RouteParser;
+use ConstanzeStandard\Fluff\Component\RouteParser;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';

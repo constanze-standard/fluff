@@ -18,7 +18,6 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
-use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -28,9 +27,31 @@ use ConstanzeStandard\RequestHandler\Dispatcher as RequestDispatcher;
  * The router request handler.
  * 
  * @author Alex <blldxt@gmail.com>
+ * 
+ * @abstract
  */
-abstract class AbstractRequestHandler implements RequestHandlerInterface
+abstract class AbstractRouteHandler implements RequestHandlerInterface
 {
+    /**
+     * @param string $attributeName Default is `route`.
+     */
+    public function __construct(string $attributeName = 'route')
+    {
+        $this->attributeName = $attributeName;
+    }
+
+    /**
+     * Get RequestHandler from callable.
+     * 
+     * @abstract
+     * 
+     * @param callable|array $handler
+     * @param array $params
+     * 
+     * @return RequestHandlerInterface
+     */
+    abstract protected function getRequestHandler($handler, array $params): RequestHandlerInterface;
+
     /**
      * Invoke handler from route.
      * 
@@ -40,27 +61,22 @@ abstract class AbstractRequestHandler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $route = $request->getAttribute(RouterMiddleware::ATTRIBUTE_NAME);
+        $route = $request->getAttribute($this->attributeName);
+
         if ($route) {
             list($routeHandler, $middlewares, $params) = $route;
-            $coreHandler = $this->getRequestHandlerFromCallable($routeHandler, $params);
-            $requestDispatcher = new RequestDispatcher($coreHandler);
+            $requestDispatcher = new RequestDispatcher(
+                $this->getRequestHandler($routeHandler, $params)
+            );
+
+            ksort($middlewares);
             foreach ($middlewares as $middleware) {
                 $requestDispatcher->addMiddleware($middleware);
             }
+
             return $requestDispatcher->handle($request);
         }
 
-        throw new \RuntimeException('The `' . RouterMiddleware::ATTRIBUTE_NAME . '` attribute is not exist.');
+        throw new \RuntimeException('The `' . $this->attributeName . '` attribute is not exist.');
     }
-
-    /**
-     * Get RequestHandler from callable.
-     * 
-     * @param callable|array $handler
-     * @param array $params
-     * 
-     * @return RequestHandlerInterface
-     */
-    abstract protected function getRequestHandlerFromCallable($handler, array $params): RequestHandlerInterface;
 }

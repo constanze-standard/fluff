@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Service;
+namespace ConstanzeStandard\Fluff\Component;
 
 use RuntimeException;
 use InvalidArgumentException;

@@ -18,6 +18,7 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
+use Beige\Invoker\Interfaces\InvokerInterface;
 use Beige\Invoker\Invoker;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -29,33 +30,40 @@ use Psr\Container\ContainerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class InjectableRequestHandler extends AbstractRequestHandler
+class InjectableRouteHandler extends AbstractRouteHandler
 {
     /**
      * @var ContainerInterface
      */
     private $container;
 
-    private $requestPreparedHandler;
+    /**
+     * The injectable invoker.
+     * 
+     * @var InvokerInterface
+     */
+    private $invoker;
 
     /**
      * @param ContainerInterface $container
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, string $attributeName = 'route')
     {
+        parent::__construct($attributeName);
         $this->container = $container;
     }
 
     /**
-     * Register a handler on request preqared.
+     * Get the invoker.
      * 
-     * @param callable $handler A callable object with two parameters:
-     *  - `\Psr\Http\Message\ServerRequestInterface`.
-     *  - `\Psr\Container\ContainerInterface`
+     * @return InvokerInterface
      */
-    public function onRequestPrepared(callable $handler)
+    public function getInvoker(): InvokerInterface
     {
-        $this->requestPreparedHandler = $handler;
+        if (!$this->invoker) {
+            $this->invoker = new Invoker($this->container);
+        }
+        return $this->invoker;
     }
 
     /**
@@ -66,41 +74,37 @@ class InjectableRequestHandler extends AbstractRequestHandler
      * 
      * @return RequestHandlerInterface
      */
-    protected function getRequestHandlerFromCallable($handler, array $params): RequestHandlerInterface
+    protected function getRequestHandler($handler, array $params): RequestHandlerInterface
     {
-        return new class ($this->container, $handler, $params, $this->requestPreparedHandler) implements RequestHandlerInterface
+        $invoker = $this->getInvoker();
+        return new class ($this->container, $handler, $params, $invoker) implements RequestHandlerInterface
         {
             private $container;
             private $handler;
             private $params;
-            private $requestPreparedHandler;
+            private $invoker;
 
-            public function __construct(ContainerInterface $container, $handler, array $params, $requestPreparedHandler)
+            public function __construct(ContainerInterface $container, $handler, array $params, InvokerInterface $invoker)
             {
                 $this->container = $container;
                 $this->handler = $handler;
                 $this->params = $params;
-                $this->requestPreparedHandler = $requestPreparedHandler;
+                $this->invoker = $invoker;
             }
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
-                $invoker = new Invoker($this->container);
-                if ($this->requestPreparedHandler) {
-                    call_user_func($this->requestPreparedHandler, $request, $this->container);
-                }
-
                 if (is_array($this->handler)) {
-                    $instance = $invoker->new($this->handler[0]);
-                    return $invoker->callMethod(
+                    $instance = $this->invoker->new($this->handler[0]);
+                    return $this->invoker->callMethod(
                         $instance,
-                        $this->handler[1] ?? 'index',
+                        $this->handler[1] ?? '__invoke',
                         $this->params
                     );
                 }
         
                 if (is_callable($this->handler)) {
-                    return $invoker->call($this->handler, $this->params);
+                    return $this->invoker->call($this->handler, $this->params);
                 }
 
                 throw new \InvalidArgumentException('Route handler must be array or callable.');

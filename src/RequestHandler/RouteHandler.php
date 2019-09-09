@@ -27,7 +27,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class DefaultRequestHandler extends AbstractRequestHandler
+class RouteHandler extends AbstractRouteHandler
 {
     /**
      * Get RequestHandler from callable.
@@ -37,10 +37,10 @@ class DefaultRequestHandler extends AbstractRequestHandler
      * 
      * @return RequestHandlerInterface
      */
-    protected function getRequestHandlerFromCallable($handler, array $params): RequestHandlerInterface
+    protected function getRequestHandler($handler, array $params): RequestHandlerInterface
     {
         if (! is_callable($handler)) {
-            throw \InvalidArgumentException('The route handler must be callable.');
+            throw new \InvalidArgumentException('The route handler must be callable.');
         }
 
         return new class ($handler, $params) implements RequestHandlerInterface

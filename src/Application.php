@@ -18,31 +18,22 @@
 
 namespace ConstanzeStandard\Fluff;
 
-use ConstanzeStandard\Fluff\Component\HttpRouteHelperTrait;
-use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
-use ConstanzeStandard\Fluff\RequestHandler\DefaultRequestHandler;
 use ConstanzeStandard\RequestHandler\Dispatcher as RequestDispatcher;
+use ConstanzeStandard\RequestHandler\Interfaces\MiddlewareDispatcherInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-class Application implements RequestHandlerInterface
+class Application implements MiddlewareDispatcherInterface
 {
-    use HttpRouteHelperTrait;
-
     /**
      * The request disptcher.
      * 
-     * @var RequestDispatcher
+     * @var MiddlewareDispatcherInterface
      */
-    private $requestDispatcher;
-
-    /**
-     * @var RouterMiddleware
-     */
-    private $routerMiddleware;
+    private $middlewareDispatcher;
 
     /**
      * Application constructor.
@@ -50,22 +41,9 @@ class Application implements RequestHandlerInterface
      *
      * @param ContainerInterface $container
      */
-    public function __construct(RequestHandlerInterface $requestHandler = null)
+    public function __construct(RequestHandlerInterface $requestHandler)
     {
-        $requestHandler = $requestHandler ?? new DefaultRequestHandler();
-        $this->requestDispatcher = new RequestDispatcher($requestHandler);
-        $this->routerMiddleware = new RouterMiddleware();
-        $this->addMiddleware($this->routerMiddleware);
-    }
-
-    /**
-     * Get router middleware.
-     * 
-     * @return RouterMiddleware
-     */
-    public function getRouterMiddleware()
-    {
-        return $this->routerMiddleware;
+        $this->middlewareDispatcher = new RequestDispatcher($requestHandler);
     }
 
     /**
@@ -75,10 +53,9 @@ class Application implements RequestHandlerInterface
      * 
      * @return MiddlewareInterface
      */
-    public function addMiddleware(MiddlewareInterface $middleware)
+    public function addMiddleware(MiddlewareInterface $middleware): MiddlewareInterface
     {
-        $this->requestDispatcher->addMiddleware($middleware);
-        return $middleware;
+        return $this->middlewareDispatcher->addMiddleware($middleware);
     }
 
     /**
@@ -90,7 +67,7 @@ class Application implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $response = $this->requestDispatcher->handle($request);
+        $response = $this->middlewareDispatcher->handle($request);
 
         if (strcasecmp($request->getMethod(), 'HEAD') === 0) {
             $body = $request->getBody();
@@ -100,33 +77,5 @@ class Application implements RequestHandlerInterface
             }
         }
         return $response;
-    }
-
-    /**
-     * Attach data to collection.
-     *
-     * @param array|string $methods
-     * @param string $pattern
-     * @param callable|array $handler
-     * @param array $middlewares
-     * @param string|null $name
-     * 
-     * @throws \InvalidArgumentException
-     */
-    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null)
-    {
-        $this->routerMiddleware->withRoute($methods, $pattern, $handler, $middlewares, $name);
-    }
-
-    /**
-     * Create a route group.
-     * 
-     * @param string $prefixPattern
-     * @param array $middlewares
-     * @param callable $callback
-     */
-    public function withGroup(string $prefixPattern, array $middlewares = [], callable $callback)
-    {
-        $this->routerMiddleware->withGroup($prefixPattern, $middlewares, $callback);
     }
 }

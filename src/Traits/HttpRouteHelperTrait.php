@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Component;
+namespace ConstanzeStandard\Fluff\Traits;
 
 /**
  * The router collection helper.
