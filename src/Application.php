@@ -26,6 +26,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+ * The entry of FLUFF micro framework for dispatch the request handler.
+ * 
+ * @author Alex <blldxt@gmail.com>
+ */
 class Application implements MiddlewareDispatcherInterface
 {
     /**
