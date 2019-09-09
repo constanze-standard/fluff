@@ -38,13 +38,6 @@ class EndOutputBuffer implements MiddlewareInterface
     private $chunkSize;
 
     /**
-     * Flush output buffer or not? default is true.
-     * 
-     * @var bool
-     */
-    private $flush;
-
-    /**
      * Flush or clean output buffers.
      * 
      * @param bool $isFlush
@@ -82,10 +75,8 @@ class EndOutputBuffer implements MiddlewareInterface
 
     /**
      * Process an incoming server request.
-     *
-     * Processes an incoming server request in order to produce a response.
-     * If unable to produce the response itself, it may delegate to the provided
-     * request handler to do so.
+     * 
+     * Close the output buffer, and flush if it's `HEAD` http request.
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
