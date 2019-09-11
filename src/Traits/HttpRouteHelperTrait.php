@@ -75,4 +75,30 @@ trait HttpRouteHelperTrait
     {
         $this->withRoute('PUT', $pattern, $handler, $middlewares, $name);
     }
+
+    /**
+     * Attach route to collector with `OPTIONS` method.
+     * 
+     * @param string $pattern
+     * @param \Closure|array|string $handler
+     * @param array $middlewares
+     * @param string|null $name
+     */
+    public function options($pattern, $handler, array $middlewares = [], string $name = null)
+    {
+        $this->withRoute('OPTIONS', $pattern, $handler, $middlewares, $name);
+    }
+
+    /**
+     * Attach data to collection.
+     *
+     * @param array|string $methods
+     * @param string $pattern
+     * @param \Closure|array|string $handler
+     * @param MiddlewareInterface[] $middlewares
+     * @param string|null $name
+     * 
+     * @throws \InvalidArgumentException
+     */
+    abstract public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null);
 }

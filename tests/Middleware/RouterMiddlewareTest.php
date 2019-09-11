@@ -1,6 +1,7 @@
 <?php
 
 use ConstanzeStandard\Fluff\Component\HttpRouter;
+use ConstanzeStandard\Fluff\Component\RouteData;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
 use ConstanzeStandard\Route\Dispatcher;
@@ -68,6 +69,7 @@ class RouterMiddlewareTest extends AbstractTest
         /** @var ServerRequestInterface $request */
         /** @var CollectionInterface $collector */
 
+        $routeData = new RouteData('routeHandler', [1], ['id' => 1]);
         $response = $this->createMock(ResponseInterface::class);
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
         $requestHandler->expects($this->once())->method('handle')->willReturn($response);
@@ -75,7 +77,7 @@ class RouterMiddlewareTest extends AbstractTest
         $request->expects($this->once())->method('getMethod')->willReturn('GET');
         $request->expects($this->once())->method('getUri')->willReturn('/foo');
         $request->expects($this->once())->method('withAttribute')
-            ->with('route', ['routeHandler', [1], ['id' => 1]])
+            ->with('route', $routeData)
             ->willReturn($request);
         $collector = $this->createMock(CollectionInterface::class);
         /** @var DispatcherInterface $dispatcher */
@@ -230,5 +232,19 @@ class RouterMiddlewareTest extends AbstractTest
             'DELETE', '/prefix/foo', 'controller', ['middlewares' => [1], 'name' => 'test']
         );
         $router->delete('/foo', 'controller', [1], 'test');
+    }
+
+    public function testOptions()
+    {
+        /** @var CollectionInterface $collector */
+        $collector = $this->createMock(CollectionInterface::class);
+        $router = new RouterMiddleware($collector);
+        $this->setProperty($router, 'privPrefix', '/prefix');
+        $this->setProperty($router, 'collection', $collector);
+
+        $collector->expects($this->once())->method('attach')->with(
+            'OPTIONS', '/prefix/foo', 'controller', ['middlewares' => [1], 'name' => 'test']
+        );
+        $router->options('/foo', 'controller', [1], 'test');
     }
 }

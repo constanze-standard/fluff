@@ -1,12 +1,13 @@
 <?php
 
+use ConstanzeStandard\Fluff\RequestHandler\Handler;
 use ConstanzeStandard\Fluff\RequestHandler\SingleHandler;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
-class SingleHandlerTest extends AbstractTest
+class HandlerTest extends AbstractTest
 {
     public function testHandle()
     {
@@ -16,7 +17,7 @@ class SingleHandlerTest extends AbstractTest
         $func = function(ServerRequestInterface $request) use ($response) {
             return $response;
         };
-        $handler = new SingleHandler($func);
+        $handler = new Handler($func);
         $result = $handler->handle($request);
         $this->assertEquals($result, $response);
     }

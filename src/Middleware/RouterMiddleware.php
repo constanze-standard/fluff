@@ -18,6 +18,7 @@
 
 namespace ConstanzeStandard\Fluff\Middleware;
 
+use ConstanzeStandard\Fluff\Component\RouteData;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Interfaces\RouteableInterface;
@@ -70,20 +71,13 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
     private $privMiddlewares = [];
 
     /**
-     * The name of request attribute for route data.
-     * 
-     * @var string
-     */
-    private $attributeName;
-
-    /**
      * @param CollectionInterface $collection
      */
-    public function __construct(CollectionInterface $collection = null, string $attributeName = 'route')
+    public function __construct(CollectionInterface $collection = null, string $routeFlag = 'ROUTE_FLAG')
     {
         $this->collection = $collection ?? new Collector();
         $this->dispatcher = new Dispatcher($this->collection);
-        $this->attributeName = $attributeName;
+        $this->routeFlag = $routeFlag;
     }
 
     /**
@@ -161,8 +155,9 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
 
         switch ($result[0]) {
             case Dispatcher::STATUS_OK:
-                list($_, $routeHandler, $options, $params) = $result;
-                $request = $request->withAttribute($this->attributeName, [$routeHandler, $options['middlewares'], $params]);
+                list($_, $routeHandler, $options, $arguments) = $result;
+                $routeData = new RouteData($routeHandler, $options['middlewares'], $arguments);
+                $request = $request->withAttribute($this->routeFlag, $routeData);
                 return $handler->handle($request);
             case Dispatcher::STATUS_ERROR:
                 if (Dispatcher::ERROR_METHOD_NOT_ALLOWED === $result[1]) {

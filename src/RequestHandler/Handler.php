@@ -27,7 +27,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class SingleHandler implements RequestHandlerInterface
+class Handler implements RequestHandlerInterface
 {
     /**
      * The single callable handler.
@@ -37,11 +37,32 @@ class SingleHandler implements RequestHandlerInterface
     private $handler;
 
     /**
-     * @param callable $handler
+     * The route url arguments.
+     * 
+     * @var array
      */
-    public function __construct(callable $handler)
+    private $arguments;
+
+    /**
+     * Get the `Handler` definition.
+     * 
+     * @return \Closure
+     */
+    public static function getDefinition()
+    {
+        return function($handler, $arguments) {
+            return new static($handler, $arguments);
+        };
+    }
+
+    /**
+     * @param callable $handler
+     * @param array $arguments
+     */
+    public function __construct(callable $handler, array $arguments = [])
     {
         $this->handler = $handler;
+        $this->arguments = $arguments;
     }
 
     /**
@@ -56,6 +77,6 @@ class SingleHandler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        return call_user_func($this->handler, $request);
+        return call_user_func($this->handler, $request, $this->arguments);
     }
 }

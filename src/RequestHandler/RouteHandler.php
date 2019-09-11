@@ -18,6 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
+use ConstanzeStandard\Fluff\Component\RouteData;
+use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -27,38 +29,57 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class RouteHandler extends AbstractRouteHandler
+class RouteHandler implements RequestHandlerInterface
 {
+    use MiddlewareHandlerTrait;
+
     /**
-     * Get RequestHandler from callable.
+     * The injectable invoker.
      * 
-     * @param callable|array $handler
-     * @param array $params
-     * 
-     * @return RequestHandlerInterface
+     * @var string Default is `route`.
      */
-    protected function getRequestHandler($handler, array $params): RequestHandlerInterface
+    private $routeFlag;
+
+    /**
+     * The child handler definition.
+     * 
+     * @var callable
+     */
+    private $definition;
+
+    /**
+     * @param string $attributeName Default is `route`.
+     */
+    public function __construct(callable $definition, string $routeFlag = 'ROUTE_FLAG')
     {
-        if (! is_callable($handler)) {
-            throw new \InvalidArgumentException('The route handler must be callable.');
+        $this->definition = $definition;
+        $this->routeFlag = $routeFlag;
+    }
+
+    /**
+     * Get route data from previous middleware.
+     * &
+     * Handle the request and inject parameters to route handler.
+     * 
+     * @param ServerRequestInterface $request
+     * 
+     * @throws \RuntimeException
+     * 
+     * @return ResponseInterface
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $routeData = $request->getAttribute($this->routeFlag);
+
+        if ($routeData instanceof RouteData) {
+            $routeHandler = $routeData->getHandler();
+            $middlewares = $routeData->getMiddlewares();
+            $arguments = $routeData->getArguments();
+
+            $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
+            return $this->handleWithMiddlewares($middlewares, $request, $childHandler);
         }
 
-        return new class ($handler, $params) implements RequestHandlerInterface
-        {
-            private $handler;
-            private $params;
-
-            public function __construct(callable $handler, array $params)
-            {
-                $this->handler = $handler;
-                $this->params = $params;
-            }
-
-            public function handle(ServerRequestInterface $request): ResponseInterface
-            {
-                $handler = \Closure::fromCallable($this->handler);
-                return call_user_func($handler, $request, $this->params);
-            }
-        };
+        throw new \RuntimeException('The `' . $this->routeFlag . '` attribute is not exist.');
     }
 }

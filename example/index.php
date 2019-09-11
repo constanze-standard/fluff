@@ -4,10 +4,15 @@ use Beige\Psr11\Container;
 use ConstanzeStandard\EventDispatcher\Interfaces\EventInterface;
 use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Event\ExceptionEvent;
+use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
 use ConstanzeStandard\Fluff\Middleware\ExceptionCaptor;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
+use ConstanzeStandard\Fluff\RequestHandler\DiHandler;
+use ConstanzeStandard\Fluff\RequestHandler\Handler;
 use ConstanzeStandard\Fluff\RequestHandler\InjectableRequestHandler;
 use ConstanzeStandard\Fluff\RequestHandler\InjectableRouteHandler;
+use ConstanzeStandard\Fluff\RequestHandler\LazyHandler;
+use ConstanzeStandard\Fluff\RequestHandler\RouteHandler;
 use ConstanzeStandard\Fluff\RequestHandler\SingleHandler;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
@@ -44,20 +49,54 @@ class HelloMiddleware implements MiddlewareInterface
 
 
 
+// $container = new Container();
+
+// $app = new Application(new InjectableRouteHandler($container));
+
+// $routerMiddleware = $app->addMiddleware(new RouterMiddleware());
+
+// $routerMiddleware->addMiddleware(new CatchRequestMiddleware($container));
+
+// $routerMiddleware->withRoute('GET', '/user/{id}', function(ServerRequestInterface $reqeust, $id) {
+//     echo $reqeust->getAttribute('say');
+//     return new Response();
+// }, [
+//     new HelloMiddleware()
+// ]);
+
+// $request = new ServerRequest('GET', '/user/12');
+// $app->handle($request);
+
+// $requestHandler = new SingleHandler(function(ServerRequestInterface $request) {
+//     return new Response(200, [], 'hello world');
+// });
+// $app = new Application($requestHandler);
+// $app->addMiddleware(new EndOutputBuffer());
+
+// $request = new ServerRequest('GET', '/user/12');
+// $app->handle($request);
+
+class Ctrl
+{
+    public $a = 12;
+
+    public function __invoke(Ctrl $ctrl)
+    {
+        echo $ctrl->a;
+        return new Response();
+    }
+}
+
 $container = new Container();
+$container->set(Ctrl::class, new Ctrl);
+$handler = new RouteHandler(DiHandler::getDefinition($container));
+$app = new Application($handler);
 
-$app = new Application(new InjectableRouteHandler($container));
+/** @var RouterMiddleware $router */
+$router = $app->addMiddleware(new RouterMiddleware());
+$router->get('/user', Ctrl::class);
 
-$routerMiddleware = $app->addMiddleware(new RouterMiddleware());
+$app->addMiddleware(new EndOutputBuffer());
 
-$routerMiddleware->addMiddleware(new CatchRequestMiddleware($container));
-
-$routerMiddleware->withRoute('GET', '/user/{id}', function(ServerRequestInterface $reqeust, $id) {
-    echo $reqeust->getAttribute('say');
-    return new Response();
-}, [
-    new HelloMiddleware()
-]);
-
-$request = new ServerRequest('GET', '/user/12');
+$request = new ServerRequest('GET', '/user');
 $app->handle($request);
