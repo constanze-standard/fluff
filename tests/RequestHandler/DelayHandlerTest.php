@@ -1,7 +1,7 @@
 <?php
 
 use Beige\Psr11\Container;
-use ConstanzeStandard\Fluff\RequestHandler\LazyHandler;
+use ConstanzeStandard\Fluff\RequestHandler\DelayHandler;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,7 +35,7 @@ class LasyHandlerTest extends AbstractTest
             return $response;
         };
         $container = new Container();
-        $handler = new LazyHandler($func, [], $container);
+        $handler = new DelayHandler($func, [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -50,7 +50,7 @@ class LasyHandlerTest extends AbstractTest
         $func = function() use ($response) {
             return $response;
         };
-        $handler = new LazyHandler('StringTest2@index', [], $container);
+        $handler = new DelayHandler('StringTest2@index', [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -65,7 +65,7 @@ class LasyHandlerTest extends AbstractTest
         $func = function() use ($response) {
             return $response;
         };
-        $handler = new LazyHandler('StringTest2', [], $container);
+        $handler = new DelayHandler('StringTest2', [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -83,7 +83,7 @@ class LasyHandlerTest extends AbstractTest
         $func = function() use ($response) {
             return $response;
         };
-        $handler = new LazyHandler([], [], $container);
+        $handler = new DelayHandler([], [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -93,8 +93,8 @@ class LasyHandlerTest extends AbstractTest
     public function testGetDefinition_static()
     {
         $container = new Container();
-        $closure = LazyHandler::getDefinition();
+        $closure = DelayHandler::getDefinition();
         $result = $closure('StringTest2', [], $container);
-        $this->assertInstanceOf(LazyHandler::class, $result);
+        $this->assertInstanceOf(DelayHandler::class, $result);
     }
 }

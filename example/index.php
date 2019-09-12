@@ -1,21 +1,18 @@
 <?php
 
 use Beige\Psr11\Container;
-use ConstanzeStandard\EventDispatcher\Interfaces\EventInterface;
 use ConstanzeStandard\Fluff\Application;
-use ConstanzeStandard\Fluff\Event\ExceptionEvent;
+use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
 use ConstanzeStandard\Fluff\Middleware\ExceptionCaptor;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
 use ConstanzeStandard\Fluff\RequestHandler\DiHandler;
+use ConstanzeStandard\Fluff\RequestHandler\Dispatcher;
 use ConstanzeStandard\Fluff\RequestHandler\Handler;
-use ConstanzeStandard\Fluff\RequestHandler\InjectableRequestHandler;
-use ConstanzeStandard\Fluff\RequestHandler\InjectableRouteHandler;
-use ConstanzeStandard\Fluff\RequestHandler\LazyHandler;
-use ConstanzeStandard\Fluff\RequestHandler\RouteHandler;
-use ConstanzeStandard\Fluff\RequestHandler\SingleHandler;
-use GuzzleHttp\Psr7\Response;
+use ConstanzeStandard\Fluff\RequestHandler\DelayHandler;
+use Nyholm\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
+use Nyholm\Psr7\ServerRequest as NyholmServerRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -34,6 +31,7 @@ class CatchRequestMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $this->container->set(ServerRequestInterface::class, $request);
+        $this->container->set(get_class($request), $request);
         return $handler->handle($request);
     }
 }
@@ -76,27 +74,59 @@ class HelloMiddleware implements MiddlewareInterface
 // $request = new ServerRequest('GET', '/user/12');
 // $app->handle($request);
 
-class Ctrl
+class M implements MiddlewareInterface
 {
-    public $a = 12;
-
-    public function __invoke(Ctrl $ctrl)
+    public function __construct($num)
     {
-        echo $ctrl->a;
-        return new Response();
+        $this->num = $num;
+    }
+
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        echo $this->num. ' ';
+        return $handler->handle($request);
+    }
+}
+
+class Service
+{
+    public function sayHello($name)
+    {
+        return 'Hello ' . $name;
+    }
+}
+
+class Target
+{
+    public function index(Service $service, $name)
+    {
+        return new Response(200, [], $service->sayHello($name));
     }
 }
 
 $container = new Container();
-$container->set(Ctrl::class, new Ctrl);
-$handler = new RouteHandler(DiHandler::getDefinition($container));
-$app = new Application($handler);
+$container->set(Service::class, new Service());
+$dispatcher = new Dispatcher(DiHandler::getDefinition($container));
+$app = new Application($dispatcher);
 
 /** @var RouterMiddleware $router */
 $router = $app->addMiddleware(new RouterMiddleware());
-$router->get('/user', Ctrl::class);
+
+/** @var ExceptionCaptor $exceptionCaptor */
+$exceptionCaptor = $app->addMiddleware(new ExceptionCaptor());
+
+$notFoundHandler = function(ServerRequestInterface $request, \Throwable $e) {
+    return new Response(404, [], $e->getMessage());
+};
+$exceptionCaptor->withExceptionHandler(NotFoundException::class, $notFoundHandler);
 
 $app->addMiddleware(new EndOutputBuffer());
 
-$request = new ServerRequest('GET', '/user');
+$router->addMiddleware(new M(0));
+$router->withGroup('', [new M(1)], function($router) {
+    $router->get('/user/{name}', 'Target@index')->addMiddleware(new M(2))->addMiddleware(new M(3));
+});
+$router->addMiddleware(new M(4));
+
+$request = new ServerRequest('GET', '/user/World');
 $app->handle($request);

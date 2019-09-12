@@ -2,6 +2,8 @@
 
 namespace ConstanzeStandard\Fluff\Interfaces;
 
+use ConstanzeStandard\Fluff\Component\Route;
+
 interface RouteableInterface
 {
     /**
@@ -13,9 +15,9 @@ interface RouteableInterface
      * @param array $middlewares
      * @param string|null $name
      * 
-     * @throws \InvalidArgumentException
+     * @return Route
      */
-    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null);
+    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route;
 
     /**
      * Create a route group.

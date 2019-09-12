@@ -20,8 +20,10 @@ namespace ConstanzeStandard\Fluff\Component;
 
 use Psr\Http\Server\MiddlewareInterface;
 
-class RouteData
+class DispatchData
 {
+    const ATTRIBUTE_NAME = 'DISPATCH_DATA_ATTRIBUTE_NAME';
+
     /**
      * The request callback.
      * 

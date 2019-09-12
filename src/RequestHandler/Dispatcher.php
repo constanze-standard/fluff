@@ -18,7 +18,7 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
-use ConstanzeStandard\Fluff\Component\RouteData;
+use ConstanzeStandard\Fluff\Component\DispatchData;
 use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -29,16 +29,16 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class RouteHandler implements RequestHandlerInterface
+class Dispatcher implements RequestHandlerInterface
 {
     use MiddlewareHandlerTrait;
 
     /**
-     * The injectable invoker.
+     * The dispatch data flag.
      * 
      * @var string Default is `route`.
      */
-    private $routeFlag;
+    private $dispathDataFlag = DispatchData::ATTRIBUTE_NAME;
 
     /**
      * The child handler definition.
@@ -50,10 +50,9 @@ class RouteHandler implements RequestHandlerInterface
     /**
      * @param string $attributeName Default is `route`.
      */
-    public function __construct(callable $definition, string $routeFlag = 'ROUTE_FLAG')
+    public function __construct(callable $definition)
     {
         $this->definition = $definition;
-        $this->routeFlag = $routeFlag;
     }
 
     /**
@@ -69,17 +68,17 @@ class RouteHandler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $routeData = $request->getAttribute($this->routeFlag);
+        $dispatchData = $request->getAttribute($this->dispathDataFlag);
 
-        if ($routeData instanceof RouteData) {
-            $routeHandler = $routeData->getHandler();
-            $middlewares = $routeData->getMiddlewares();
-            $arguments = $routeData->getArguments();
+        if ($dispatchData instanceof DispatchData) {
+            $routeHandler = $dispatchData->getHandler();
+            $middlewares = $dispatchData->getMiddlewares();
+            $arguments = $dispatchData->getArguments();
 
             $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
             return $this->handleWithMiddlewares($middlewares, $request, $childHandler);
         }
 
-        throw new \RuntimeException('The `' . $this->routeFlag . '` attribute is not exist.');
+        throw new \RuntimeException('The `' . $this->dispathDataFlag . '` attribute is not exist.');
     }
 }

@@ -17,7 +17,6 @@
 
 namespace ConstanzeStandard\Fluff\Traits;
 
-use ConstanzeStandard\Fluff\Component\RouteData;
 use Psr\Http\Server\MiddlewareInterface;
 use ConstanzeStandard\RequestHandler\Dispatcher;
 use Psr\Http\Message\ResponseInterface;

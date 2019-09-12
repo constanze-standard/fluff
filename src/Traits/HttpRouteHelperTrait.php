@@ -17,6 +17,8 @@
 
 namespace ConstanzeStandard\Fluff\Traits;
 
+use ConstanzeStandard\Fluff\Component\Route;
+
 /**
  * The router collection helper.
  * 
@@ -31,10 +33,12 @@ trait HttpRouteHelperTrait
      * @param \Closure|array|string $handler
      * @param array $middlewares
      * @param string|null $name
+     * 
+     * @return Route
      */
-    public function get($pattern, $handler, array $middlewares = [], string $name = null)
+    public function get($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        $this->withRoute('GET', $pattern, $handler, $middlewares, $name);
+        return $this->withRoute('GET', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -44,10 +48,12 @@ trait HttpRouteHelperTrait
      * @param \Closure|array|string $handler
      * @param array $middlewares
      * @param string|null $name
+     * 
+     * @return Route
      */
-    public function post($pattern, $handler, array $middlewares = [], string $name = null)
+    public function post($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        $this->withRoute('POST', $pattern, $handler, $middlewares, $name);
+        return $this->withRoute('POST', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -57,10 +63,12 @@ trait HttpRouteHelperTrait
      * @param \Closure|array|string $handler
      * @param array $middlewares
      * @param string|null $name
+     * 
+     * @return Route
      */
-    public function delete($pattern, $handler, array $middlewares = [], string $name = null)
+    public function delete($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        $this->withRoute('DELETE', $pattern, $handler, $middlewares, $name);
+        return $this->withRoute('DELETE', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -70,10 +78,12 @@ trait HttpRouteHelperTrait
      * @param \Closure|array|string $handler
      * @param array $middlewares
      * @param string|null $name
+     * 
+     * @return Route
      */
-    public function put($pattern, $handler, array $middlewares = [], string $name = null)
+    public function put($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        $this->withRoute('PUT', $pattern, $handler, $middlewares, $name);
+        return $this->withRoute('PUT', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -83,10 +93,12 @@ trait HttpRouteHelperTrait
      * @param \Closure|array|string $handler
      * @param array $middlewares
      * @param string|null $name
+     * 
+     * @return Route
      */
-    public function options($pattern, $handler, array $middlewares = [], string $name = null)
+    public function options($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        $this->withRoute('OPTIONS', $pattern, $handler, $middlewares, $name);
+        return $this->withRoute('OPTIONS', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -98,7 +110,7 @@ trait HttpRouteHelperTrait
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
-     * @throws \InvalidArgumentException
+     * @return Route
      */
-    abstract public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null);
+    abstract public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route;
 }

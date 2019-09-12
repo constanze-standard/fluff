@@ -18,7 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\Middleware;
 
-use ConstanzeStandard\Fluff\Component\RouteData;
+use ConstanzeStandard\Fluff\Component\DispatchData;
+use ConstanzeStandard\Fluff\Component\Route;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Interfaces\RouteableInterface;
@@ -41,6 +42,11 @@ use RuntimeException;
 class RouterMiddleware implements MiddlewareInterface, RouteableInterface
 {
     use HttpRouteHelperTrait;
+
+    /**
+     * @var string
+     */
+    private $dispathDataFlag;
 
     /**
      * The route collection.
@@ -66,18 +72,32 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
     /**
      * Previous middlewares.
      * 
-     * @var array
+     * @var MiddlewareInterface[]
      */
     private $privMiddlewares = [];
 
     /**
+     * Global middlewares.
+     * 
+     * @var Route[]
+     */
+    private $routes = [];
+
+    /**
+     * Global middlewares.
+     * 
+     * @var MiddlewareInterface[]
+     */
+    private $middlewares = [];
+
+    /**
      * @param CollectionInterface $collection
      */
-    public function __construct(CollectionInterface $collection = null, string $routeFlag = 'ROUTE_FLAG')
+    public function __construct(CollectionInterface $collection = null, string $dispathDataFlag = DispatchData::ATTRIBUTE_NAME)
     {
         $this->collection = $collection ?? new Collector();
         $this->dispatcher = new Dispatcher($this->collection);
-        $this->routeFlag = $routeFlag;
+        $this->dispathDataFlag = $dispathDataFlag;
     }
 
     /**
@@ -89,7 +109,12 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
      */
     public function addMiddleware(MiddlewareInterface $middleware): MiddlewareInterface
     {
-        $this->privMiddlewares[] = $middleware;
+        $this->middlewares[] = $middleware;
+
+        foreach ($this->routes as $route) {
+            $route->addMiddleware($middleware);
+        }
+
         return $middleware;
     }
 
@@ -102,18 +127,17 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
-     * @throws \InvalidArgumentException
+     * @return Route
      */
-    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null)
+    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
     {
         $pattern = $this->privPrefix . $pattern;
-        $middlewares = array_merge($this->privMiddlewares, $middlewares);
-        $options = [];
-        $options['middlewares'] = $middlewares;
-        if ($name) {
-            $options['name'] = $name;
-        }
-        $this->collection->attach($methods, $pattern, $handler, $options);
+        $middlewares = array_merge($this->middlewares, $this->privMiddlewares, $middlewares);
+
+        $route = new Route($methods, $pattern, $handler, $middlewares, $name);
+        $this->routes[] = $route;
+
+        return $route;
     }
 
     /**
@@ -149,6 +173,7 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $this->attachCollection();
         $url = (string) $request->getUri();
         $httpMethod = $request->getMethod();
         $result = $this->dispatcher->dispatch($httpMethod, $url);
@@ -156,8 +181,8 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
         switch ($result[0]) {
             case Dispatcher::STATUS_OK:
                 list($_, $routeHandler, $options, $arguments) = $result;
-                $routeData = new RouteData($routeHandler, $options['middlewares'], $arguments);
-                $request = $request->withAttribute($this->routeFlag, $routeData);
+                $dispatchData = new DispatchData($routeHandler, $options['middlewares'], $arguments);
+                $request = $request->withAttribute($this->dispathDataFlag, $dispatchData);
                 return $handler->handle($request);
             case Dispatcher::STATUS_ERROR:
                 if (Dispatcher::ERROR_METHOD_NOT_ALLOWED === $result[1]) {
@@ -168,5 +193,24 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
         }
 
         throw new RuntimeException('Unknow error from router.');
+    }
+
+    /**
+     * Attach collection with routes.
+     */
+    private function attachCollection()
+    {
+        foreach ($this->routes as $route) {
+            $options = [];
+            $options['middlewares'] = $route->getMiddlewares();
+            $name = $route->getName();
+            if ($name) {
+                $options['name'] = $name;
+            }
+            $handler = $route->getHandler();
+            $pattern = $route->getPattern();
+            $methods = $route->getHttpMethods();
+            $this->collection->attach($methods, $pattern, $handler, $options);
+        }
     }
 }

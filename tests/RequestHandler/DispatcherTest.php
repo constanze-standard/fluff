@@ -1,8 +1,8 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\RouteData;
+use ConstanzeStandard\Fluff\Component\DispatchData;
 use ConstanzeStandard\Fluff\RequestHandler\Handler;
-use ConstanzeStandard\Fluff\RequestHandler\RouteHandler;
+use ConstanzeStandard\Fluff\RequestHandler\Dispatcher;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -10,7 +10,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
-class RouteHandlerTest extends AbstractTest
+class DispatcherTest extends AbstractTest
 {
     public function testHandle()
     {
@@ -21,11 +21,11 @@ class RouteHandlerTest extends AbstractTest
             return $response;
         };
 
-        $routeData = new RouteData($mockHandler, [], []);
+        $dispatchData = new DispatchData($mockHandler, [], []);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with('route')
-            ->willReturn($routeData);
-        $handler = new RouteHandler(Handler::getDefinition(), 'route');
+            ->with(DispatchData::ATTRIBUTE_NAME)
+            ->willReturn($dispatchData);
+        $handler = new Dispatcher(Handler::getDefinition());
         $result = $handler->handle($request);
         $this->assertEquals($result, $response);
     }
@@ -42,11 +42,11 @@ class RouteHandlerTest extends AbstractTest
         $middleware = $this->createMock(MiddlewareInterface::class);
         $middleware->expects($this->exactly(1))->method('process')->willReturn($response);
 
-        $routeData = new RouteData($mockHandler, [$middleware], []);
+        $dispatchData = new DispatchData($mockHandler, [$middleware], []);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with('route')
-            ->willReturn($routeData);
-        $handler = new RouteHandler(Handler::getDefinition(), 'route');
+            ->with(DispatchData::ATTRIBUTE_NAME)
+            ->willReturn($dispatchData);
+        $handler = new Dispatcher(Handler::getDefinition());
         $result = $handler->handle($request);
         $this->assertEquals($result, $response);
     }
@@ -59,27 +59,25 @@ class RouteHandlerTest extends AbstractTest
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $mockHandler = 'NotCallable';
-        $routeData = new RouteData($mockHandler, [], []);
+        $dispatchData = new DispatchData($mockHandler, [], []);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with('route')
-            ->willReturn($routeData);
-        $handler = new RouteHandler(Handler::getDefinition(), 'route');
+            ->with(DispatchData::ATTRIBUTE_NAME)
+            ->willReturn($dispatchData);
+        $handler = new Dispatcher(Handler::getDefinition());
         $handler->handle($request);
     }
 
     /**
      * @expectedException \RuntimeException
      */
-    public function testAbstractRouteHandlerHandleRuntimeException()
+    public function testAbstractDispatcherHandleRuntimeException()
     {
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
-        $response = new Response();
-        $mockHandler = 'NotCallable';
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with('route')
+            ->with(DispatchData::ATTRIBUTE_NAME)
             ->willReturn(null);
-        $handler = new RouteHandler(Handler::getDefinition(), 'route');
+        $handler = new Dispatcher(Handler::getDefinition());
         $handler->handle($request);
     }
 }

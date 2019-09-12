@@ -27,7 +27,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class LazyHandler implements RequestHandlerInterface
+class DelayHandler implements RequestHandlerInterface
 {
     const DEFAULT_HANDLER_METHOD = '__invoke';
 
@@ -53,7 +53,7 @@ class LazyHandler implements RequestHandlerInterface
     private $initialArguments;
 
     /**
-     * Get the `LazyHandler` definition.
+     * Get the `DelayHandler` definition.
      * 
      * @param mixed[] $initialArguments
      * 
@@ -96,10 +96,11 @@ class LazyHandler implements RequestHandlerInterface
         if (is_string($this->handler)) {
             $callback = explode('@', $this->handler);
             $className = $callback[0];
-            return call_user_func([
+            $handler = [
                 new $className(...$this->initialArguments),
                 $callback[1] ?? static::DEFAULT_HANDLER_METHOD
-            ], $this->arguments);
+            ];
+            return (new Handler($handler, $this->arguments))->handle($request);
         }
 
         throw new \InvalidArgumentException('Route handler must be string or callable.');
