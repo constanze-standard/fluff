@@ -18,8 +18,8 @@ use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
 use ConstanzeStandard\Fluff\RequestHandler\Handler;
 use Psr\Http\Message\ServerRequestInterface;
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Psr7\ServerRequest;
+use Nyholm\Psr7\Response;
+use Nyholm\Psr7\ServerRequest;
 
 require __DIR__ . '/vendor/autoload.php';
 
