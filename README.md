@@ -12,7 +12,7 @@ Fluff 并不是“开箱即用”的框架，我们希望在合理的架构之�
 composer install constanze-standard/fluff "^2.0"
 ```
 
-## 开始使用
+## 最小应用
 ```php
 use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
