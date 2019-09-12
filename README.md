@@ -5,7 +5,7 @@
 ## 关于 Fluff
 Fluff 是一个为 web 应用打造的微框架。它整合了当今主流的实践标准，帮助你实现高可用性的应用程序。
 
-我们相信“让专业的人做专业的事”会带来最好的结果，在软件架构中也是如此。Fluff 专注于”融合各方的力量“来解决问题，使用 Fluff 的开发者也是如此，我们给与使用者最大限度的选择权，挑选最专业的或最适合的应用组件 将使你的程序更好更快的运转。
+Fluff 并不是“开箱即用”的框架，我们希望在合理的架构之下，对应用的各个层面做到最细粒度的控制，不同组件相互配合，可以衍生出多种架构风格。这也意味着相比传统意义上的 MVC 框架会有更多的前期准备，但随着工作的进行，应用程序也将更加符合你的预期。
 
 ## 安装
 ```bash
@@ -14,22 +14,23 @@ composer install constanze-standard/fluff "^2.0"
 
 ## 开始使用
 ```php
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Psr7\ServerRequest;
 use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
+use ConstanzeStandard\Fluff\RequestHandler\Handler;
+use Psr\Http\Message\ServerRequestInterface;
+use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\ServerRequest;
 
-$app = new Application();
+require __DIR__ . '/vendor/autoload.php';
 
-$app->get('/hello/{name}', function($name) {
-    $response = new Response();
-    $response->getBody()->write('hello ' . $name);
-    return $response;
+$handler = new Handler(function(ServerRequestInterface $request) {
+    return new Response(200, [], 'hello world');
 });
+$app = new Application($handler);
+$app->addMiddleware(new EndOutputBuffer());
 
-$app->withMiddleware(new EndOutputBuffer());
-
-$app->start(new ServerRequest('GET', '/hello/world'));
+$request = new ServerRequest('GET', '/');
+$app->handle($request);
 ```
 
 ## 学习 Fluff
