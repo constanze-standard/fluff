@@ -20,6 +20,11 @@ namespace ConstanzeStandard\Fluff\Component;
 
 use Psr\Http\Server\MiddlewareInterface;
 
+/**
+ * The dispatch data for handler.
+ * 
+ * @author Alex <blldxt@gmail.com>
+ */
 class DispatchData
 {
     const ATTRIBUTE_NAME = 'DISPATCH_DATA_ATTRIBUTE_NAME';

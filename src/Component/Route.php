@@ -20,6 +20,11 @@ namespace ConstanzeStandard\Fluff\Component;
 
 use Psr\Http\Server\MiddlewareInterface;
 
+/**
+ * The http route.
+ * 
+ * @author Alex <blldxt@gmail.com>
+ */
 class Route
 {
     /**
