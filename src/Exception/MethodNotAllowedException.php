@@ -6,6 +6,10 @@ use RuntimeException;
 
 class MethodNotAllowedException extends RuntimeException
 {
+    /**
+     * @param string $message
+     * @param string[] $allowedMethods
+     */
     public function __construct($message = '405 Method Not Allowed.', $allowedMethods = [])
     {
         parent::__construct($message, 405);

@@ -1,9 +1,9 @@
 <?php
 
-use ConstanzeStandard\Fluff\Conponent\RouteParser;
+use ConstanzeStandard\Fluff\Component\RouteParser;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 
-require_once __DIR__ . '/AbstractTest.php';
+require_once __DIR__ . '/../AbstractTest.php';
 
 class RouteParserTest extends AbstractTest
 {
@@ -65,7 +65,8 @@ class RouteParserTest extends AbstractTest
         $collector = $this->createMock(CollectionInterface::class);
         $collector->expects($this->once())->method('getRoutesByData')
             ->willReturn(['/foo/{id}', null, null, ['id']]);
-        $routeParser = new RouteParser($collector, '/base');
+        $routeParser = new RouteParser($collector);
+        $routeParser->setHost('/base');
         $result = $routeParser->getUrlByName('name', ['id' => 1], []);
         $this->assertEquals($result, '/base/foo/1');
     }
