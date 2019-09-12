@@ -4,6 +4,7 @@ use ConstanzeStandard\Fluff\Component\HttpRouter;
 use ConstanzeStandard\Fluff\Component\DispatchData;
 use ConstanzeStandard\Fluff\Component\Route;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
+use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
 use ConstanzeStandard\Route\Dispatcher;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
@@ -255,5 +256,12 @@ class RouterMiddlewareTest extends AbstractTest
 
         $this->setProperty($router, 'routes', [$route]);
         $this->callMethod($router, 'attachCollection');
+    }
+
+    public function testGetRouteParser()
+    {
+        $router = new RouterMiddleware();
+        $result = $router->getRouteParser();
+        $this->assertInstanceOf(RouteParserInterface::class, $result);
     }
 }

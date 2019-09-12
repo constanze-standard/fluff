@@ -56,6 +56,16 @@ class RouteParser implements RouteParserInterface
     }
 
     /**
+     * Set the host name
+     * 
+     * @param string $basePath
+     */
+    public function setHost(string $basePath)
+    {
+        $this->basePath = $basePath;
+    }
+
+    /**
      * Get the relative url by route name.
      * 
      * @param string $name Name of route.

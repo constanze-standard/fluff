@@ -20,9 +20,11 @@ namespace ConstanzeStandard\Fluff\Middleware;
 
 use ConstanzeStandard\Fluff\Component\DispatchData;
 use ConstanzeStandard\Fluff\Component\Route;
+use ConstanzeStandard\Fluff\Component\RouteParser;
 use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\NotFoundException;
 use ConstanzeStandard\Fluff\Interfaces\RouteableInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\Traits\HttpRouteHelperTrait;
 use ConstanzeStandard\Route\Collector;
 use ConstanzeStandard\Route\Dispatcher;
@@ -91,7 +93,15 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
     private $middlewares = [];
 
     /**
+     * The route parser for collection.
+     * 
+     * @var RouteParserInterface
+     */
+    private $routeParser;
+
+    /**
      * @param CollectionInterface $collection
+     * @param string $dispathDataFlag
      */
     public function __construct(CollectionInterface $collection = null, string $dispathDataFlag = DispatchData::ATTRIBUTE_NAME)
     {
@@ -157,6 +167,19 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
         call_user_func(\Closure::fromCallable($callback), $this);
         $this->privPrefix = $prevPrefix;
         $this->privMiddlewares = $privMiddlewares;
+    }
+
+    /**
+     * Get the route parser for collection.
+     * 
+     * @return RouteParserInterface
+     */
+    public function getRouteParser(): RouteParserInterface
+    {
+        if (!$this->routeParser) {
+            $this->routeParser = new RouteParser($this->collection);
+        }
+        return $this->routeParser;
     }
 
     /**
