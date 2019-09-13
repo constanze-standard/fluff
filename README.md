@@ -28,13 +28,12 @@ require __DIR__ . '/../vendor/autoload.php';
 $dispatcher = new Dispatcher(Handler::getDefinition());
 $app = new Application($dispatcher);
 
-/** @var RouterMiddleware $router */
 $router = $app->addMiddleware(new RouterMiddleware());
+$app->addMiddleware(new EndOutputBuffer());
+
 $router->get('/user/{name}', function(ServerRequestInterface $request, $args) {
     return new Response(200, [], 'Hello ' . $args['name']);
 });
-
-$app->addMiddleware(new EndOutputBuffer());
 
 $request = new ServerRequest('GET', '/user/World');
 $app->handle($request);
