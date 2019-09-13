@@ -9,19 +9,18 @@
     "require": {
         "php": "^7.1.3",
         "psr/http-server-middleware": "^1.0",
-        "psr/event-dispatcher": "^1.0",
         "php-http/message": "^1.7",
         "beige/invoker": "^2.0",
-        "beige/psr-11": "^1.0",
         "constanze-standard/router": "^1.0",
-        "constanze-standard/request-handler": "^1.0",
-        "constanze-standard/event-dispatcher": "^1.0",
-        "nyholm/psr7": "^1.2"
+        "constanze-standard/request-handler": "^1.0"
     },
     "require-dev": {
+        "beige/psr-11": "^1.0",
         "phpunit/phpunit": "^7.5",
         "guzzlehttp/psr7": "^1.6",
-        "nyholm/psr7-server": "^0.3.0"
+        "nyholm/psr7-server": "^0.3.0",
+        "nyholm/psr7": "^1.2",
+        "constanze-standard/event-dispatcher": "^1.0"
     },
     "autoload": {
         "psr-4": {

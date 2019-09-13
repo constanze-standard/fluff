@@ -12,24 +12,31 @@ Fluff 并不是“开箱即用”的框架，我们希望在合理的架构之�
 composer install constanze-standard/fluff "^2.0"
 ```
 
-## 最小应用
+## 最小应用示例
 ```php
 use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
+use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
+use ConstanzeStandard\Fluff\RequestHandler\Dispatcher;
 use ConstanzeStandard\Fluff\RequestHandler\Handler;
-use Psr\Http\Message\ServerRequestInterface;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
+use Psr\Http\Message\ServerRequestInterface;
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-$handler = new Handler(function(ServerRequestInterface $request) {
-    return new Response(200, [], 'hello world');
+$dispatcher = new Dispatcher(Handler::getDefinition());
+$app = new Application($dispatcher);
+
+/** @var RouterMiddleware $router */
+$router = $app->addMiddleware(new RouterMiddleware());
+$router->get('/user/{name}', function(ServerRequestInterface $request, $args) {
+    return new Response(200, [], 'Hello ' . $args['name']);
 });
-$app = new Application($handler);
+
 $app->addMiddleware(new EndOutputBuffer());
 
-$request = new ServerRequest('GET', '/');
+$request = new ServerRequest('GET', '/user/World');
 $app->handle($request);
 ```
 
