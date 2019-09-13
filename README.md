@@ -1,4 +1,4 @@
-# Fluff
+# Fluff Micro Framework
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
 
