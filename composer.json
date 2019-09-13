@@ -15,9 +15,8 @@
         "constanze-standard/request-handler": "^1.0"
     },
     "require-dev": {
-        "beige/psr-11": "^1.0",
         "phpunit/phpunit": "^7.5",
-        "guzzlehttp/psr7": "^1.6",
+        "beige/psr-11": "^1.0",
         "nyholm/psr7-server": "^0.3.0",
         "nyholm/psr7": "^1.2",
         "constanze-standard/event-dispatcher": "^1.0"
@@ -28,6 +27,7 @@
         }
     },
     "suggest": {
-        "guzzlehttp/psr7": "The PSR-7 message implementation."
+        "nyholm/psr7-server": "Helper classes to handle PSR-7 server requests.",
+        "nyholm/psr7": "A fast PHP7 implementation of PSR-7."
     }
 }
