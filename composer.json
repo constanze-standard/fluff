@@ -30,5 +30,10 @@
     "suggest": {
         "nyholm/psr7-server": "Helper classes to handle PSR-7 server requests.",
         "nyholm/psr7": "A fast PHP7 implementation of PSR-7."
+    },
+    "scripts": {
+        "start": "php -S 0.0.0.0:8080 -t ./",
+        "cc-start": "php -S 0.0.0.0:8888 -t ./tests/codeCoverage/",
+        "test": "phpunit --coverage-html ./tests/codeCoverage tests"
     }
 }

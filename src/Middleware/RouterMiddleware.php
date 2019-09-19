@@ -23,7 +23,6 @@ use ConstanzeStandard\Fluff\Component\Route;
 use ConstanzeStandard\Fluff\Component\RouteParser;
 use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
-use ConstanzeStandard\Fluff\Interfaces\RouteableInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\Traits\HttpRouteHelperTrait;
 use ConstanzeStandard\Route\Collector;
@@ -42,7 +41,7 @@ use RuntimeException;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class RouterMiddleware implements MiddlewareInterface, RouteableInterface
+class RouterMiddleware implements MiddlewareInterface
 {
     use HttpRouteHelperTrait;
 

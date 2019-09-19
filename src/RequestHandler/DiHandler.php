@@ -39,7 +39,7 @@ class DiHandler implements RequestHandlerInterface
      * 
      * @var callable|array [className, methodName]
      */
-    private $routeHandler;
+    private $handler;
 
     /**
      * The route url arguments.
@@ -71,12 +71,12 @@ class DiHandler implements RequestHandlerInterface
 
     /**
      * @param ContainerInterface $container
-     * @param callable $routeHandler
+     * @param callable $handler
      * @param array $arguments
      */
-    public function __construct(ContainerInterface $container, $routeHandler, array $arguments = [])
+    public function __construct(ContainerInterface $container, $handler, array $arguments = [])
     {
-        $this->routeHandler = $routeHandler;
+        $this->handler = $handler;
         $this->arguments = $arguments;
         $this->container = $container;
     }
@@ -95,19 +95,23 @@ class DiHandler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $invoker = new Invoker($this->container);
+        $invoker = $this->container->has(InvokerInterface::class) ?
+            $this->container->get(InvokerInterface::class) :
+            new Invoker($this->container);
 
-        switch (true) {
-            case is_callable($this->routeHandler):
-                return $invoker->call($this->routeHandler, $this->arguments);
-            case is_string($this->routeHandler):
-                $callback = explode('@', $this->routeHandler);
-                return $invoker->callMethod(
-                    $invoker->new($callback[0]),
-                    $callback[1] ?? static::DEFAULT_HANDLER_METHOD,
-                    $this->arguments
-                );
+        if (is_callable($this->handler)) {
+            return $invoker->call($this->handler, $this->arguments);
         }
-        throw new \InvalidArgumentException('Route handler must be string or callable.');
+
+        if (is_string($this->handler)) {
+            $targetInfo = explode('@', $this->handler);
+            return $invoker->callMethod(
+                $invoker->new($targetInfo[0]),
+                $targetInfo[1] ?? static::DEFAULT_HANDLER_METHOD,
+                $this->arguments
+            );
+        }
+
+        throw new \InvalidArgumentException('The handler must be string or callable.');
     }
 }

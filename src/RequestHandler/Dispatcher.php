@@ -18,7 +18,6 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
-use ConstanzeStandard\Fluff\Interfaces\DispatchDataInterface;
 use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;
 use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Psr\Http\Message\ResponseInterface;
