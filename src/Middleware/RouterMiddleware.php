@@ -18,11 +18,11 @@
 
 namespace ConstanzeStandard\Fluff\Middleware;
 
-use ConstanzeStandard\Fluff\Component\DispatchData;
+use ConstanzeStandard\Fluff\Component\DispatchInformation;
 use ConstanzeStandard\Fluff\Component\Route;
 use ConstanzeStandard\Fluff\Component\RouteParser;
-use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
-use ConstanzeStandard\Fluff\Exception\NotFoundException;
+use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
+use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
 use ConstanzeStandard\Fluff\Interfaces\RouteableInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\Traits\HttpRouteHelperTrait;
@@ -30,6 +30,7 @@ use ConstanzeStandard\Route\Collector;
 use ConstanzeStandard\Route\Dispatcher;
 use ConstanzeStandard\Route\Interfaces\CollectionInterface;
 use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
+use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -46,6 +47,8 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
     use HttpRouteHelperTrait;
 
     /**
+     * The dispatch data flag.
+     * 
      * @var string
      */
     private $dispathDataFlag;
@@ -103,7 +106,7 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
      * @param CollectionInterface $collection
      * @param string $dispathDataFlag
      */
-    public function __construct(CollectionInterface $collection = null, string $dispathDataFlag = DispatchData::ATTRIBUTE_NAME)
+    public function __construct(CollectionInterface $collection = null, string $dispathDataFlag = DispatchInformationInterface::class)
     {
         $this->collection = $collection ?? new Collector();
         $this->dispatcher = new Dispatcher($this->collection);
@@ -188,8 +191,8 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
      * 
-     * @throws MethodNotAllowedException
-     * @throws NotFoundException
+     * @throws HttpMethodNotAllowedException
+     * @throws HttpNotFoundException
      * @throws RuntimeException
      * 
      * @return ResponseInterface
@@ -204,14 +207,14 @@ class RouterMiddleware implements MiddlewareInterface, RouteableInterface
         switch ($result[0]) {
             case Dispatcher::STATUS_OK:
                 list($_, $routeHandler, $options, $arguments) = $result;
-                $dispatchData = new DispatchData($routeHandler, $options['middlewares'], $arguments);
-                $request = $request->withAttribute($this->dispathDataFlag, $dispatchData);
+                $dispatchInformation = new DispatchInformation($routeHandler, $options['middlewares'], $arguments);
+                $request = $request->withAttribute($this->dispathDataFlag, $dispatchInformation);
                 return $handler->handle($request);
             case Dispatcher::STATUS_ERROR:
                 if (Dispatcher::ERROR_METHOD_NOT_ALLOWED === $result[1]) {
-                    throw new MethodNotAllowedException('405 Method Not Allowed.', $result[2]);
+                    throw new HttpMethodNotAllowedException('405 Method Not Allowed.', $result[2]);
                 } elseif (Dispatcher::ERROR_NOT_FOUND === $result[1]) {
-                    throw new NotFoundException('404 Not Found.');
+                    throw new HttpNotFoundException('404 Not Found.');
                 }
         }
 

@@ -1,12 +1,12 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\DispatchData;
+use ConstanzeStandard\Fluff\Component\DispatchInformation;
 use ConstanzeStandard\Fluff\RequestHandler\Handler;
 use ConstanzeStandard\Fluff\RequestHandler\Dispatcher;
-use GuzzleHttp\Psr7\Response;
+use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
@@ -21,10 +21,10 @@ class DispatcherTest extends AbstractTest
             return $response;
         };
 
-        $dispatchData = new DispatchData($mockHandler, [], []);
+        $dispatchInformation = new DispatchInformation($mockHandler, [], []);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with(DispatchData::ATTRIBUTE_NAME)
-            ->willReturn($dispatchData);
+            ->with(DispatchInformationInterface::class)
+            ->willReturn($dispatchInformation);
         $handler = new Dispatcher(Handler::getDefinition());
         $result = $handler->handle($request);
         $this->assertEquals($result, $response);
@@ -42,10 +42,10 @@ class DispatcherTest extends AbstractTest
         $middleware = $this->createMock(MiddlewareInterface::class);
         $middleware->expects($this->exactly(1))->method('process')->willReturn($response);
 
-        $dispatchData = new DispatchData($mockHandler, [$middleware], []);
+        $dispatchInformation = new DispatchInformation($mockHandler, [$middleware], []);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with(DispatchData::ATTRIBUTE_NAME)
-            ->willReturn($dispatchData);
+            ->with(DispatchInformationInterface::class)
+            ->willReturn($dispatchInformation);
         $handler = new Dispatcher(Handler::getDefinition());
         $result = $handler->handle($request);
         $this->assertEquals($result, $response);
@@ -59,10 +59,10 @@ class DispatcherTest extends AbstractTest
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $mockHandler = 'NotCallable';
-        $dispatchData = new DispatchData($mockHandler, [], []);
+        $dispatchInformation = new DispatchInformation($mockHandler, [], []);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with(DispatchData::ATTRIBUTE_NAME)
-            ->willReturn($dispatchData);
+            ->with(DispatchInformationInterface::class)
+            ->willReturn($dispatchInformation);
         $handler = new Dispatcher(Handler::getDefinition());
         $handler->handle($request);
     }
@@ -75,7 +75,7 @@ class DispatcherTest extends AbstractTest
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $request->expects($this->exactly(1))->method('getAttribute')
-            ->with(DispatchData::ATTRIBUTE_NAME)
+            ->with(DispatchInformationInterface::class)
             ->willReturn(null);
         $handler = new Dispatcher(Handler::getDefinition());
         $handler->handle($request);

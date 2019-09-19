@@ -1,9 +1,7 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\HttpRouter;
-use ConstanzeStandard\Fluff\Component\DispatchData;
+use ConstanzeStandard\Fluff\Component\DispatchInformation;
 use ConstanzeStandard\Fluff\Component\Route;
-use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
 use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
 use ConstanzeStandard\Route\Dispatcher;
@@ -69,7 +67,7 @@ class RouterMiddlewareTest extends AbstractTest
         /** @var ServerRequestInterface $request */
         /** @var CollectionInterface $collector */
 
-        $dispatchData = new DispatchData('routeHandler', [1], ['id' => 1]);
+        $dispatchInformation = new DispatchInformation('routeHandler', [1], ['id' => 1]);
         $response = $this->createMock(ResponseInterface::class);
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
         $requestHandler->expects($this->once())->method('handle')->willReturn($response);
@@ -77,7 +75,7 @@ class RouterMiddlewareTest extends AbstractTest
         $request->expects($this->once())->method('getMethod')->willReturn('GET');
         $request->expects($this->once())->method('getUri')->willReturn('/foo');
         $request->expects($this->once())->method('withAttribute')
-            ->with('route', $dispatchData)
+            ->with('route', $dispatchInformation)
             ->willReturn($request);
         $collector = $this->createMock(CollectionInterface::class);
         /** @var DispatcherInterface $dispatcher */
@@ -92,7 +90,7 @@ class RouterMiddlewareTest extends AbstractTest
     }
 
     /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\MethodNotAllowedException
+     * @expectedException \ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException
      */
     public function testDispatchERROR_METHOD_NOT_ALLOWED()
     {
@@ -121,7 +119,7 @@ class RouterMiddlewareTest extends AbstractTest
     }
 
     /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\NotFoundException
+     * @expectedException \ConstanzeStandard\Fluff\Exception\HttpNotFoundException
      */
     public function testDispatchERROR_NOT_FOUND()
     {

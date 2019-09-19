@@ -18,8 +18,9 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
-use ConstanzeStandard\Fluff\Component\DispatchData;
+use ConstanzeStandard\Fluff\Interfaces\DispatchDataInterface;
 use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;
+use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -36,9 +37,9 @@ class Dispatcher implements RequestHandlerInterface
     /**
      * The dispatch data flag.
      * 
-     * @var string Default is `route`.
+     * @var string
      */
-    private $dispathDataFlag = DispatchData::ATTRIBUTE_NAME;
+    const DISPATCH_DATA_KEY = DispatchInformationInterface::class;
 
     /**
      * The child handler definition.
@@ -68,17 +69,17 @@ class Dispatcher implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $dispatchData = $request->getAttribute($this->dispathDataFlag);
+        $dispatchInformation = $request->getAttribute(static::DISPATCH_DATA_KEY);
 
-        if ($dispatchData instanceof DispatchData) {
-            $routeHandler = $dispatchData->getHandler();
-            $middlewares = $dispatchData->getMiddlewares();
-            $arguments = $dispatchData->getArguments();
+        if ($dispatchInformation instanceof DispatchInformationInterface) {
+            $routeHandler = $dispatchInformation->getHandler();
+            $middlewares = $dispatchInformation->getMiddlewares();
+            $arguments = $dispatchInformation->getArguments();
 
             $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
             return $this->handleWithMiddlewares($middlewares, $request, $childHandler);
         }
 
-        throw new \RuntimeException('The `' . $this->dispathDataFlag . '` attribute is not exist.');
+        throw new \RuntimeException('The dispatch data is not exist.');
     }
 }
