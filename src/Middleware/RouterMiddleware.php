@@ -131,7 +131,7 @@ class RouterMiddleware implements MiddlewareInterface
     }
 
     /**
-     * Attach data to collection.
+     * Register a route to collection.
      *
      * @param array|string $methods
      * @param string $pattern
@@ -141,7 +141,7 @@ class RouterMiddleware implements MiddlewareInterface
      * 
      * @return Route
      */
-    public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
+    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
     {
         $pattern = $this->privPrefix . $pattern;
         $middlewares = array_merge($this->middlewares, $this->privMiddlewares, $middlewares);
@@ -159,14 +159,14 @@ class RouterMiddleware implements MiddlewareInterface
      * @param MiddlewareInterface[] $middlewares
      * @param callable $callback
      */
-    public function withGroup(string $prefixPattern, array $middlewares = [], callable $callback)
+    public function group(string $prefixPattern, array $middlewares = [], callable $callback)
     {
         $prevPrefix = $this->privPrefix;
         $privMiddlewares = $this->privMiddlewares;
         $this->privPrefix = $this->privPrefix . $prefixPattern;
         $this->privMiddlewares = array_merge($this->privMiddlewares, $middlewares);
 
-        call_user_func(\Closure::fromCallable($callback), $this);
+        call_user_func($callback, $this);
         $this->privPrefix = $prevPrefix;
         $this->privMiddlewares = $privMiddlewares;
     }
@@ -199,9 +199,9 @@ class RouterMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $this->attachCollection();
-        $url = (string) $request->getUri();
-        $httpMethod = $request->getMethod();
-        $result = $this->dispatcher->dispatch($httpMethod, $url);
+        $result = $this->dispatcher->dispatch(
+            $request->getMethod(), (string) $request->getUri()
+        );
 
         switch ($result[0]) {
             case Dispatcher::STATUS_OK:

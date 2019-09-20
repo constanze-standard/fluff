@@ -20,7 +20,9 @@
         "beige/psr-11": "^1.0",
         "nyholm/psr7-server": "^0.3.0",
         "nyholm/psr7": "^1.2",
-        "constanze-standard/event-dispatcher": "^1.0"
+        "constanze-standard/event-dispatcher": "^1.0",
+        "react/promise": "^2.7",
+        "sabre/event": "^5"
     },
     "autoload": {
         "psr-4": {

@@ -44,13 +44,13 @@ class Handler implements RequestHandlerInterface
     private $arguments;
 
     /**
-     * Get the `Handler` definition.
+     * Get the `Basic` handler definition.
      * 
      * @return \Closure
      */
     public static function getDefinition()
     {
-        return function($handler, $arguments) {
+        return function($handler, array $arguments) {
             return new static($handler, $arguments);
         };
     }

@@ -56,7 +56,7 @@ class DiHandler implements RequestHandlerInterface
     private $container;
 
     /**
-     * Get the `DiHandler` definition.
+     * Get the `Di` handler definition.
      * 
      * @param ContainerInterface|null $container
      * 
@@ -64,7 +64,7 @@ class DiHandler implements RequestHandlerInterface
      */
     public static function getDefinition(ContainerInterface $container)
     {
-        return function($handler, $arguments) use ($container) {
+        return function($handler, array $arguments) use ($container) {
             return new static($container, $handler, $arguments);
         };
     }

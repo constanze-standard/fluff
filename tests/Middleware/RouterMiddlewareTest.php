@@ -39,7 +39,7 @@ class RouterMiddlewareTest extends AbstractTest
         $router = new RouterMiddleware($collector);
         $this->setProperty($router, 'privPrefix', '/prefix');
         $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->withRoute('GET', '/foo', 'controller', [$middleware], 'test');
+        $result = $router->add('GET', '/foo', 'controller', [$middleware], 'test');
         $this->assertInstanceOf(Route::class, $result);
     }
 
@@ -52,8 +52,8 @@ class RouterMiddlewareTest extends AbstractTest
         $this->setProperty($router, 'privPrefix', '/prefix');
         $this->setProperty($router, 'privMiddlewares', [$middleware1]);
 
-        $router->withGroup('/foo', [$middleware2], function($router) use ($middleware3) {
-            $router->withRoute('GET', '/bar', 'controller', [$middleware3]);
+        $router->group('/foo', [$middleware2], function($router) use ($middleware3) {
+            $router->add('GET', '/bar', 'controller', [$middleware3]);
         });
         $privPrefix = $this->getProperty($router, 'privPrefix');
         $privMiddlewares = $this->getProperty($router, 'privMiddlewares');
