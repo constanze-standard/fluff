@@ -42,24 +42,16 @@ class EndOutputBuffer implements MiddlewareInterface
      * 
      * @param bool $isFlush
      */
-    private static function endOutputBuffers($isFlush)
+    public static function cleanOutputBuffers(int $targetLevel)
     {
-        if ($isFlush && \function_exists('fastcgi_finish_request')) {
-            return fastcgi_finish_request();
-        }
-
         $status = ob_get_status(true);
         $level = \count($status);
-        $flags = PHP_OUTPUT_HANDLER_REMOVABLE | ($isFlush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
-        while ($level > 0) {
+        $flags = PHP_OUTPUT_HANDLER_REMOVABLE | PHP_OUTPUT_HANDLER_CLEANABLE;
+        while ($level > $targetLevel) {
             $level--;
             $s = $status[$level];
             if ((isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
-                if ($isFlush) {
-                    ob_end_flush();
-                } else {
-                    ob_end_clean();
-                }
+                ob_end_clean();
             }
         }
     }
@@ -95,17 +87,41 @@ class EndOutputBuffer implements MiddlewareInterface
     public function respond(ResponseInterface $response, $flush = true)
     {
         if ($flush) {
+            $body = $response->getBody();
+            if ($body->isSeekable()) {
+                $body->rewind();
+            }
+
+            $contentLength  = $response->getHeaderLine('Content-Length');
+            if (!$contentLength) {
+                $contentLength = $body->getSize();
+            }
+
             $outputHandle = fopen('php://output', 'a');
-            foreach ($this->respondContents($response) as $partOfContent) {
-                fwrite($outputHandle, $partOfContent);
-                if (ob_get_level() > 0) {
-                    flush();
-                    ob_flush();
+
+            if ((int) $contentLength) {
+                while ($contentLength > 0 && !$body->eof()) {
+                    $length = min($this->chunkSize, (int)$contentLength);
+                    $contentLength -= $length;
+                    fwrite($outputHandle, $body->read($length));
+
+                    if (connection_status() !== CONNECTION_NORMAL) {
+                        break;
+                    }
+                }
+            } else {
+                while (!$body->eof()) {
+                    fwrite($outputHandle, $body->read($this->chunkSize));
+
+                    if (connection_status() !== CONNECTION_NORMAL) {
+                        break;
+                    }
                 }
             }
+
             fclose($outputHandle);
         }
-        static::endOutputBuffers($flush);
+        static::cleanOutputBuffers(0);
     }
 
     /**
@@ -127,32 +143,6 @@ class EndOutputBuffer implements MiddlewareInterface
                     header($key . ': ' . $header, $replace);
                 }
             }
-        }
-    }
-
-    /**
-     * Get accept contents iterable.
-     * 
-     * @param ResponseInterface $response
-     * 
-     * @return iterable
-     */
-    private function respondContents(ResponseInterface $response): iterable
-    {
-        $body = $response->getBody();
-        if ($body->isSeekable()) {
-            $body->rewind();
-        }
-
-        $contentLength  = $response->getHeaderLine('Content-Length');
-        if (!$contentLength) {
-            $contentLength = $body->getSize();
-        }
-
-        while ($contentLength > 0 && !$body->eof()) {
-            $length = min($this->chunkSize, (int)$contentLength);
-            $contentLength -= $length;
-            yield $body->read($length);
         }
     }
 }

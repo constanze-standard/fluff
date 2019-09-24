@@ -20,21 +20,21 @@ namespace ConstanzeStandard\Fluff\Middleware;
 
 use ConstanzeStandard\Fluff\Component\DispatchInformation;
 use ConstanzeStandard\Fluff\Component\Route;
-use ConstanzeStandard\Fluff\Component\RouteParser;
+use ConstanzeStandard\Fluff\Component\RouteGroup;
+use ConstanzeStandard\Fluff\Component\RouteService;
 use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
-use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
 use ConstanzeStandard\Fluff\Traits\HttpRouteHelperTrait;
-use ConstanzeStandard\Route\Collector;
-use ConstanzeStandard\Route\Dispatcher;
-use ConstanzeStandard\Route\Interfaces\CollectionInterface;
-use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
+use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
+use ConstanzeStandard\Routing\Matcher;
+use ConstanzeStandard\Routing\RouteCollection;
 use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use RuntimeException;
+use SplObjectStorage;
 
 /**
  * Router middleware.
@@ -50,42 +50,21 @@ class RouterMiddleware implements MiddlewareInterface
      * 
      * @var string
      */
-    private $dispathDataFlag;
+    private $dispathDataFlag = DispatchInformationInterface::class;
 
     /**
      * The route collection.
      * 
-     * @var CollectionInterface
+     * @var RouteCollectionInterface
      */
     private $collection;
 
     /**
-     * The route dispatcher.
-     * 
-     * @var DispatcherInterface
-     */
-    private $dispatcher;
-
-    /**
-     * Previous pattern prefix
-     * 
-     * @var string
-     */
-    private $privPrefix = '';
-
-    /**
-     * Previous middlewares.
-     * 
-     * @var MiddlewareInterface[]
-     */
-    private $privMiddlewares = [];
-
-    /**
      * Global middlewares.
      * 
-     * @var Route[]
+     * @var RouteGroup[]
      */
-    private $routes = [];
+    private $routeGroups = [];
 
     /**
      * Global middlewares.
@@ -95,21 +74,41 @@ class RouterMiddleware implements MiddlewareInterface
     private $middlewares = [];
 
     /**
-     * The route parser for collection.
+     * The route service for collection.
      * 
-     * @var RouteParserInterface
+     * @var RouteService
      */
-    private $routeParser;
+    private $routeService;
 
     /**
-     * @param CollectionInterface $collection
-     * @param string $dispathDataFlag
+     * Group handlers.
+     * 
+     * @var SplObjectStorage
      */
-    public function __construct(CollectionInterface $collection = null, string $dispathDataFlag = DispatchInformationInterface::class)
+    private $groupHandlers;
+
+    /**
+     * @param RouteCollectionInterface|null $collection
+     */
+    public function __construct(RouteCollectionInterface $collection = null)
     {
-        $this->collection = $collection ?? new Collector();
-        $this->dispatcher = new Dispatcher($this->collection);
-        $this->dispathDataFlag = $dispathDataFlag;
+        $this->collection = $collection ?? new RouteCollection();
+        $this->routeService = new RouteService(
+            $collection ? $this->collectionToRoutes($this->collection) : []
+        );
+
+        $this->group = new RouteGroup('', $this->middlewares);
+        $this->groupHandlers = new SplObjectStorage();
+    }
+
+    /**
+     * Get the routeService.
+     * 
+     * @return RouteService
+     */
+    public function getRouteService(): RouteService
+    {
+        return $this->routeService;
     }
 
     /**
@@ -122,16 +121,23 @@ class RouterMiddleware implements MiddlewareInterface
     public function addMiddleware(MiddlewareInterface $middleware): MiddlewareInterface
     {
         $this->middlewares[] = $middleware;
-
-        foreach ($this->routes as $route) {
-            $route->addMiddleware($middleware);
-        }
-
-        return $middleware;
+        return $this->group->addMiddleware($middleware);
     }
 
     /**
-     * Register a route to collection.
+     * Add a route to collection.
+     * 
+     * @param Route $route
+     * 
+     * @return Route
+     */
+    public function addRoute(Route $route)
+    {
+        return $this->group->addRoute($route);
+    }
+
+    /**
+     * Register route data to collection.
      *
      * @param array|string $methods
      * @param string $pattern
@@ -143,45 +149,23 @@ class RouterMiddleware implements MiddlewareInterface
      */
     public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        $pattern = $this->privPrefix . $pattern;
-        $middlewares = array_merge($this->middlewares, $this->privMiddlewares, $middlewares);
-
-        $route = new Route($methods, $pattern, $handler, $middlewares, $name);
-        $this->routes[] = $route;
-
-        return $route;
+        return $this->group->add($methods, $pattern, $handler, $middlewares, $name);
     }
 
     /**
      * Create a route group.
      * 
-     * @param string $prefixPattern
-     * @param MiddlewareInterface[] $middlewares
      * @param callable $callback
+     * @param string $prefix
+     * @param MiddlewareInterface[] $middlewares
      */
-    public function group(string $prefixPattern, array $middlewares = [], callable $callback)
+    public function group(callable $callback, string $prefix = '', array $middlewares = [])
     {
-        $prevPrefix = $this->privPrefix;
-        $privMiddlewares = $this->privMiddlewares;
-        $this->privPrefix = $this->privPrefix . $prefixPattern;
-        $this->privMiddlewares = array_merge($this->privMiddlewares, $middlewares);
-
-        call_user_func($callback, $this);
-        $this->privPrefix = $prevPrefix;
-        $this->privMiddlewares = $privMiddlewares;
-    }
-
-    /**
-     * Get the route parser for collection.
-     * 
-     * @return RouteParserInterface
-     */
-    public function getRouteParser(): RouteParserInterface
-    {
-        if (!$this->routeParser) {
-            $this->routeParser = new RouteParser($this->collection);
-        }
-        return $this->routeParser;
+        $middlewares = array_merge($this->middlewares, $middlewares);
+        $routeGroup = new RouteGroup($prefix, $middlewares);
+        $this->groupHandlers[$routeGroup] = $callback;
+        $this->routeGroups[] = $routeGroup;
+        return $routeGroup;
     }
 
     /**
@@ -198,44 +182,75 @@ class RouterMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->attachCollection();
-        $result = $this->dispatcher->dispatch(
-            $request->getMethod(), (string) $request->getUri()
+        $this->attachRouteCollection();
+        $result = (new Matcher($this->collection))->match(
+            $request->getMethod(), (string) $request->getUri()->getPath()
         );
-
-        switch ($result[0]) {
-            case Dispatcher::STATUS_OK:
-                list($_, $routeHandler, $options, $arguments) = $result;
-                $dispatchInformation = new DispatchInformation($routeHandler, $options['middlewares'], $arguments);
-                $request = $request->withAttribute($this->dispathDataFlag, $dispatchInformation);
-                return $handler->handle($request);
-            case Dispatcher::STATUS_ERROR:
-                if (Dispatcher::ERROR_METHOD_NOT_ALLOWED === $result[1]) {
-                    throw new HttpMethodNotAllowedException('405 Method Not Allowed.', $result[2]);
-                } elseif (Dispatcher::ERROR_NOT_FOUND === $result[1]) {
-                    throw new HttpNotFoundException('404 Not Found.');
-                }
+        if ($result[0] == Matcher::STATUS_OK) {
+            [ ,$options, $routeHandler, $arguments] = $result;
+            $dispatchInformation = new DispatchInformation($routeHandler, $options['middlewares'] ?? [], $arguments);
+            $request = $request->withAttribute($this->dispathDataFlag, $dispatchInformation);
+            return $handler->handle($request);
+        } elseif (Matcher::ERROR_METHOD_NOT_ALLOWED === $result[1]) {
+            throw new HttpMethodNotAllowedException('405 Method Not Allowed.', $result[2]);
         }
-
-        throw new RuntimeException('Unknow error from router.');
+        throw new HttpNotFoundException('404 Not Found.');
     }
 
     /**
-     * Attach collection with routes.
+     * Collection convert to routes.
+     * 
+     * @param RouteCollectionInterface $collection
+     * 
+     * @return Route[]
      */
-    private function attachCollection()
+    private function collectionToRoutes(RouteCollectionInterface $collection): array
     {
-        foreach ($this->routes as $route) {
-            $options = [];
-            $options['middlewares'] = $route->getMiddlewares();
-            $name = $route->getName();
-            if ($name) {
-                $options['name'] = $name;
+        $routes = [];
+        $contents = $collection->getContents();
+        foreach ($contents as $map) {
+            foreach ($map as $method => $_contents) {
+                foreach ($_contents as $content) {
+                    [$pattern, $unserializableId, $serializable, ] = $content;
+                    $handler = $collection->getUnserializableById($unserializableId);
+                    $middlewares = $serializable['middlewares'] ?? [];
+                    $name = $serializable['name'] ?? null;
+                    $routes[] = new Route($method, $pattern, $handler, $middlewares, $name);
+                }
             }
-            $handler = $route->getHandler();
-            $pattern = $route->getPattern();
-            $methods = $route->getHttpMethods();
-            $this->collection->attach($methods, $pattern, $handler, $options);
+        }
+
+        return $routes;
+    }
+
+    /**
+     * Convert groups to routes and fill the collection.
+     */
+    private function attachRouteCollection()
+    {
+        $this->addRouteGroupToCollection($this->group);
+        foreach ($this->routeGroups as $routeGroup) {
+            call_user_func($this->groupHandlers[$routeGroup], $routeGroup);
+            $this->addRouteGroupToCollection($routeGroup);
+        }
+    }
+
+    /**
+     * Add a route data to collection.
+     * 
+     * @param RouteGroup $route
+     */
+    private function addRouteGroupToCollection(RouteGroup $routeGroup)
+    {
+        foreach ($routeGroup->getRoutes() as $route) {
+            $this->routeService->addRoute($route);
+            $this->collection->add(
+                $route->getHttpMethods(),
+                $route->getPattern(),
+                ['middlewares' => $route->getMiddlewares(),
+                    'name' => $route->getName()],
+                $route->getHandler()
+            );
         }
     }
 }
