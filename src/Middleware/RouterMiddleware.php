@@ -186,7 +186,7 @@ class RouterMiddleware implements MiddlewareInterface
         $result = (new Matcher($this->collection))->match(
             $request->getMethod(), (string) $request->getUri()->getPath()
         );
-        if ($result[0] == Matcher::STATUS_OK) {
+        if (Matcher::STATUS_OK === $result[0]) {
             [ ,$options, $routeHandler, $arguments] = $result;
             $dispatchInformation = new DispatchInformation($routeHandler, $options['middlewares'] ?? [], $arguments);
             $request = $request->withAttribute($this->dispathDataFlag, $dispatchInformation);

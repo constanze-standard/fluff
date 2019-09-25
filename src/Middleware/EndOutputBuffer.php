@@ -80,7 +80,7 @@ class EndOutputBuffer implements MiddlewareInterface
     }
 
     /**
-     * Emit the response, flush or clean the output buffer.
+     * Emit the response, flush and clean the output buffer.
      * 
      * @param ResponseInterface $response the PSR-7 response.
      */
@@ -97,7 +97,7 @@ class EndOutputBuffer implements MiddlewareInterface
                 $contentLength = $body->getSize();
             }
 
-            $outputHandle = fopen('php://output', 'a');
+            $outputHandle = fopen('php://output', 'w');
 
             if ((int) $contentLength) {
                 while ($contentLength > 0 && !$body->eof()) {
@@ -138,9 +138,11 @@ class EndOutputBuffer implements MiddlewareInterface
             header(sprintf('HTTP/%s %s %s', $version, $statusCode, $reasonPhrase));
 
             foreach ($response->getHeaders() as $key => $headers) {
-                $replace = 0 === strcasecmp($key, 'content-type');
-                foreach ($headers as $header) {
-                    header($key . ': ' . $header, $replace);
+                if (0 !== strcasecmp($key, 'set-cookie')) {
+                    $replace = 0 === strcasecmp($key, 'content-type');
+                    foreach ($headers as $header) {
+                        header("{$key}: {$header}", $replace);
+                    }
                 }
             }
         }
