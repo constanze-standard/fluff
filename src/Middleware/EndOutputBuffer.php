@@ -42,16 +42,23 @@ class EndOutputBuffer implements MiddlewareInterface
      * 
      * @param bool $isFlush
      */
-    public static function cleanOutputBuffers(int $targetLevel)
+    private static function closeOutputBuffers(int $targetLevel, $isFlush = true)
     {
+        if ($isFlush && \function_exists('fastcgi_finish_request')) {
+            return fastcgi_finish_request();
+        }
         $status = ob_get_status(true);
         $level = \count($status);
-        $flags = PHP_OUTPUT_HANDLER_REMOVABLE | PHP_OUTPUT_HANDLER_CLEANABLE;
+        $flags = PHP_OUTPUT_HANDLER_REMOVABLE | ($isFlush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
         while ($level > $targetLevel) {
             $level--;
             $s = $status[$level];
             if ((isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
-                ob_end_clean();
+                if ($isFlush) {
+                    ob_end_flush();
+                } else {
+                    ob_end_clean();
+                }
             }
         }
     }
@@ -98,7 +105,6 @@ class EndOutputBuffer implements MiddlewareInterface
             }
 
             $outputHandle = fopen('php://output', 'w');
-
             if ((int) $contentLength) {
                 while ($contentLength > 0 && !$body->eof()) {
                     $length = min($this->chunkSize, (int)$contentLength);
@@ -121,7 +127,7 @@ class EndOutputBuffer implements MiddlewareInterface
 
             fclose($outputHandle);
         }
-        static::cleanOutputBuffers(0);
+        static::closeOutputBuffers(0);
     }
 
     /**

@@ -90,17 +90,24 @@ class RouteService
      * Get url by route.
      * 
      * @param Route $route
-     * @param array $variables
+     * @param array $arguments
      * @param array $queryParams
      * 
      * @return string
+     * 
+     * @throws RuntimeException
      */
-    public function getUrlByRoute(Route $route, array $variables = [], array $queryParams = []): string
+    public function getUrlByRoute(Route $route, array $arguments = [], array $queryParams = []): string
     {
         $url = $route->getPattern();
 
-        foreach ($variables as $name => $variable) {
-            $url = preg_replace("/{{$name}(:.*)?}/", $variable, $url);
+        foreach ($arguments as $name => $argument) {
+            if (preg_match("/{{$name}:(?=.*)(.*)}/", $url, $matches)) {
+                if (!preg_match("/^{$matches[1]}$/", $argument)) {
+                    throw new RuntimeException('The URL argument ' . $name . ' format mismatch.');
+                }
+            }
+            $url = preg_replace("/{{$name}(:.*)?}/", $argument, $url);
         }
 
         if ($queryParams) {
@@ -114,14 +121,14 @@ class RouteService
      * Get url by route name.
      * 
      * @param string $name
-     * @param array $variables
+     * @param array $arguments
      * @param array $queryParams
      * 
      * @return string
      */
-    public function urlFor(string $name, array $variables = [], array $queryParams = []): string
+    public function urlFor(string $name, array $arguments = [], array $queryParams = []): string
     {
         $route = $this->getRouteByName($name);
-        return $this->getUrlByRoute($route, $variables, $queryParams);
+        return $this->getUrlByRoute($route, $arguments, $queryParams);
     }
 }

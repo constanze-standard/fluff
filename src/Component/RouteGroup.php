@@ -42,7 +42,7 @@ class RouteGroup
      * 
      * @var MiddlewareInterface[]
      */
-    private $middlewares;
+    private $middlewares = [];
 
     /**
      * Routes of currnt group.
