@@ -64,9 +64,11 @@ class EndOutputBufferTest extends AbstractTest
         $response->expects($this->once())->method('getBody')->willReturn($body);
         $response->expects($this->once())->method('getHeaderLine')->with('Content-Length')->willReturn(2);
 
+        /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $request->expects($this->once())->method('getMethod')->willReturn('GET');
 
+        /** @var RequestHandlerInterface $requestHandler */
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
         $requestHandler->expects($this->once())->method('handle')->with($request)->willReturn($response);
 
@@ -92,9 +94,11 @@ class EndOutputBufferTest extends AbstractTest
         $response->expects($this->once())->method('getBody')->willReturn($body);
         $response->expects($this->once())->method('getHeaderLine')->with('Content-Length')->willReturn(null);
 
+        /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $request->expects($this->once())->method('getMethod')->willReturn('GET');
 
+        /** @var RequestHandlerInterface $requestHandler */
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
         $requestHandler->expects($this->once())->method('handle')->with($request)->willReturn($response);
 
