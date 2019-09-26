@@ -5,7 +5,7 @@
 web 开发又一次变得有趣起来了！
 
 ## Fluff 是什么？
-- Fluff 是一个简单高效的 PHP [微框架](https://en.wikipedia.org/wiki/Microframework)，它为应用程序的构建提供多种形式的解决方案。
+- Fluff 是一个多核心的 PHP [微框架](https://en.wikipedia.org/wiki/Microframework)，它为应用程序的构建提供多种形式的解决方案。
 - Fluff 是一个能够随需求的增加而不断成长的渐进式框架。从一段处理逻辑到一个庞大的架构，它可以以任何形式出现在你的程序之中。
 
 ## 安装
