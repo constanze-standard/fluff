@@ -2,11 +2,11 @@
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
 
-你在为 web 开发寻找一块自由、舒适的乐土？那么，请使用 Fluff，让创作回归自然。
+你在为 web 开发寻找一块自由、舒适的乐土？请使用 Fluff，让创作回归自然。
 
 ## Fluff 是什么？
-- Fluff 是一个简单高效的[微框架](https://en.wikipedia.org/wiki/Microframework)，它提供软件架构上多种形式的解决方案，但不会替你做出多余的决策，你将因此获得对于项目的全面掌控。
-- Fluff 是一个能够随需求的增加而不断成长的渐进式框架，从一段处理逻辑到一个庞大的架构，它可以以任何形式出现在你的程序之中。
+- Fluff 是一个简单高效的 PHP [微框架](https://en.wikipedia.org/wiki/Microframework)，它为软件架构提供多种形式的解决方案，但不会替你做出多余的决策，你将因此获得对于项目的全面掌控。
+- Fluff 是一个能够随需求的增加而不断成长的渐进式框架。从一段处理逻辑，到一个庞大的架构，它可以以任何形式出现在你的程序之中。
 
 ## 安装
 ```bash
