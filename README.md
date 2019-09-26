@@ -13,7 +13,7 @@ composer require constanze-standard/fluff "^1.0"
 ```
 
 ## 示例
-需要额外安装组件 [`nyholm/psr7`](https://github.com/Nyholm/psr7)
+需要安装组件 [`nyholm/psr7`](https://github.com/Nyholm/psr7)
 ```php
 use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
