@@ -18,6 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\Component;
 
+use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
 use RuntimeException;
 
 /**
@@ -25,12 +27,12 @@ use RuntimeException;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class RouteService
+class RouteService implements RouteServiceInterface
 {
     /**
      * Routes
      * 
-     * @var Route[]
+     * @var RouteInterface[]
      */
     private $routes;
 
@@ -49,9 +51,9 @@ class RouteService
     /**
      * Add a route.
      * 
-     * @param Route $route
+     * @param RouteInterface $route
      */
-    public function addRoute(Route $route)
+    public function addRoute(RouteInterface $route)
     {
         $this->routes[] = $route;
     }
@@ -59,9 +61,9 @@ class RouteService
     /**
      * Get all routes.
      * 
-     * @return Route[]
+     * @return RouteInterface[]
      */
-    public function getRoutes()
+    public function getRoutes(): array
     {
         return $this->routes;
     }
@@ -71,11 +73,11 @@ class RouteService
      * 
      * @param string $name
      * 
-     * @return Route
+     * @return RouteInterface
      * 
      * @throws RuntimeException
      */
-    public function getRouteByName(string $name): Route
+    public function getRouteByName(string $name): RouteInterface
     {
         foreach ($this->routes as $route) {
             if ($name and $route->getName() === $name) {
@@ -89,7 +91,7 @@ class RouteService
     /**
      * Get url by route.
      * 
-     * @param Route $route
+     * @param RouteInterface $route
      * @param array $arguments
      * @param array $queryParams
      * 
@@ -97,7 +99,7 @@ class RouteService
      * 
      * @throws RuntimeException
      */
-    public function getUrlByRoute(Route $route, array $arguments = [], array $queryParams = []): string
+    public function getUrlByRoute(RouteInterface $route, array $arguments = [], array $queryParams = []): string
     {
         $url = $route->getPattern();
 

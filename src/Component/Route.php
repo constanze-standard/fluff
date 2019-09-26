@@ -18,6 +18,7 @@
 
 namespace ConstanzeStandard\Fluff\Component;
 
+use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
 use Psr\Http\Server\MiddlewareInterface;
 
 /**
@@ -25,10 +26,10 @@ use Psr\Http\Server\MiddlewareInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class Route
+class Route implements RouteInterface
 {
     /**
-     * On or more http methods
+     * One or more http methods
      * 
      * @var array|string
      */
@@ -56,7 +57,7 @@ class Route
     private $middlewares = [];
 
     /**
-     * Route name.
+     * The route name.
      * 
      * @var string|null
      */
@@ -85,8 +86,10 @@ class Route
      * Push an route middleware
      * 
      * @param MiddlewareInterface $middleware
+     * 
+     * @return RouteInterface
      */
-    public function addMiddleware(MiddlewareInterface $middleware): self
+    public function addMiddleware(MiddlewareInterface $middleware): RouteInterface
     {
         $this->middlewares[] = $middleware;
         return $this;
@@ -96,8 +99,10 @@ class Route
      * Set route name.
      * 
      * @param string $name
+     * 
+     * @return RouteInterface
      */
-    public function setName(string $name): self
+    public function setName(string $name): RouteInterface
     {
         $this->name = $name;
         return $this;
@@ -108,7 +113,7 @@ class Route
      * 
      * @return MiddlewareInterface[]
      */
-    public function getMiddlewares()
+    public function getMiddlewares(): array
     {
         return $this->middlewares;
     }
@@ -138,7 +143,7 @@ class Route
      * 
      * @return string
      */
-    public function getPattern()
+    public function getPattern(): string
     {
         return $this->pattern;
     }

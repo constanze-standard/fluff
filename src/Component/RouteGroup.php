@@ -18,6 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\Component;
 
+use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
 use ConstanzeStandard\Fluff\Traits\HttpRouteHelperTrait;
 use Psr\Http\Server\MiddlewareInterface;
 
@@ -26,7 +28,7 @@ use Psr\Http\Server\MiddlewareInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class RouteGroup
+class RouteGroup implements RouteGroupInterface
 {
     use HttpRouteHelperTrait;
 
@@ -72,9 +74,9 @@ class RouteGroup
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
-     * @return Route
+     * @return RouteInterface
      */
-    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
+    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         $pattern = $this->prefix . $pattern;
         $middlewares = array_merge($this->middlewares, $middlewares);
@@ -86,11 +88,11 @@ class RouteGroup
     /**
      * Add a route to collection.
      * 
-     * @param Route $route
+     * @param RouteInterface $route
      * 
-     * @return Route
+     * @return RouteInterface
      */
-    public function addRoute(Route $route)
+    public function addRoute(RouteInterface $route): RouteInterface
     {
         $this->routes[] = $route;
         return $route;
@@ -101,7 +103,7 @@ class RouteGroup
      * 
      * @param MiddlewareInterface $middleware
      * 
-     * @return self
+     * @return MiddlewareInterface
      */
     public function addMiddleware(MiddlewareInterface $middleware): MiddlewareInterface
     {
@@ -114,9 +116,9 @@ class RouteGroup
      * 
      * @param string $prefix
      * 
-     * @return self
+     * @return RouteGroupInterface
      */
-    public function setPrefix(string $prefix): self
+    public function setPrefix(string $prefix): RouteGroupInterface
     {
         $this->prefix = $prefix;
         return $this;
@@ -127,8 +129,24 @@ class RouteGroup
      * 
      * @return Route[]
      */
-    public function getRoutes()
+    public function getRoutes(): array
     {
         return $this->routes;
+    }
+
+    /**
+     * Derived a group from current group.
+     * 
+     * @param string $prefix
+     * @param MiddlewareInterface[] $middlewares
+     * 
+     * @return RouteGroupInterface
+     */
+    public function derive(string $prefix = '', array $middlewares = []): RouteGroupInterface
+    {
+        return new static(
+            $this->prefix . $prefix,
+            array_merge($this->middlewares, $middlewares)
+        );
     }
 }

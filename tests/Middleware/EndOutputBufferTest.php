@@ -1,13 +1,10 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\Route;
-use ConstanzeStandard\Fluff\Component\RouteGroup;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
 use Nyholm\Psr7\Stream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
-use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';

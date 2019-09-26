@@ -2,14 +2,12 @@
 
 use ConstanzeStandard\Fluff\Component\Route;
 use ConstanzeStandard\Fluff\Component\RouteGroup;
-use ConstanzeStandard\Fluff\Component\RouteService;
+use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
 use ConstanzeStandard\Routing\RouteCollection;
-use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
@@ -21,7 +19,7 @@ class RouterMiddlewareTest extends AbstractTest
     {
         $routerMiddleware = new RouterMiddleware();
         $result = $routerMiddleware->getRouteService();
-        $this->assertInstanceOf(RouteService::class, $result);
+        $this->assertInstanceOf(RouteServiceInterface::class, $result);
     }
 
     public function testAddMiddleware()
@@ -31,7 +29,7 @@ class RouterMiddlewareTest extends AbstractTest
         $routeGroup = $this->createMock(RouteGroup::class);
         $routeGroup->expects($this->once())->method('addMiddleware')->willReturn($middleware);
         $routerMiddleware = new RouterMiddleware();
-        $this->setProperty($routerMiddleware, 'group', $routeGroup);
+        $this->setProperty($routerMiddleware, 'routeGroup', $routeGroup);
         $result = $routerMiddleware->addMiddleware($middleware);
         $this->assertEquals($middleware, $result);
     }
@@ -43,23 +41,19 @@ class RouterMiddlewareTest extends AbstractTest
         $routeGroup = $this->createMock(RouteGroup::class);
         $routeGroup->expects($this->once())->method('addRoute')->with($route)->willReturn($route);
         $routerMiddleware = new RouterMiddleware();
-        $this->setProperty($routerMiddleware, 'group', $routeGroup);
+        $this->setProperty($routerMiddleware, 'routeGroup', $routeGroup);
         $result = $routerMiddleware->addRoute($route);
         $this->assertEquals($route, $result);
     }
 
-    public function testAdd()
+    public function testAddWithPrefix()
     {
         /** @var Route $route */
         $route = $this->createMock(Route::class);
-        $routeGroup = $this->createMock(RouteGroup::class);
-        $routeGroup->expects($this->once())->method('add')
-            ->with('GET', '/foo', 'handler', [], null)
-            ->willReturn($route);
-        $routerMiddleware = new RouterMiddleware();
-        $this->setProperty($routerMiddleware, 'group', $routeGroup);
-        $result = $routerMiddleware->add('GET', '/foo', 'handler');
-        $this->assertEquals($route, $result);
+        $routerMiddleware = (new RouterMiddleware())->setPrefix('/foo');
+        $result = $routerMiddleware->add('GET', '/bar', 'handler');
+        $this->assertInstanceOf(Route::class, $result);
+        $this->assertEquals($result->getPattern(), '/foo/bar');
     }
 
     public function testGroup()
@@ -68,17 +62,15 @@ class RouterMiddlewareTest extends AbstractTest
         $middleware1 = $this->createMock(MiddlewareInterface::class);
         /** @var MiddlewareInterface $middleware2 */
         $middleware2 = $this->createMock(MiddlewareInterface::class);
-        $func = function() {};
-        $routeGroup = $this->createMock(RouteGroup::class);
+        $func = function(RouteGroupInterface $route) {
+            $route->add('GET', '/g1', 'handler');
+        };
+        $routeGroup = $this->createMock(RouteGroupInterface::class);
         $routerMiddleware = new RouterMiddleware();
         $routerMiddleware->addMiddleware($middleware2);
-        $this->setProperty($routerMiddleware, 'group', $routeGroup);
+        $this->setProperty($routerMiddleware, 'routeGroup', $routeGroup);
         $result = $routerMiddleware->group($func, '/foo', [$middleware1]);
-        $this->assertInstanceOf(RouteGroup::class, $result);
-        $prefix = $this->getProperty($result, 'prefix');
-        $this->assertEquals($prefix, '/foo');
-        $middlewares = $this->getProperty($result, 'middlewares');
-        $this->assertEquals($middlewares, [$middleware1, $middleware2]);
+        $this->assertInstanceOf(RouteGroupInterface::class, $result);
     }
 
     public function testProcessWithStatusOK()

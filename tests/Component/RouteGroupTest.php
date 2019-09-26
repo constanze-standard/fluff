@@ -121,4 +121,17 @@ class RouteGroupTest extends AbstractTest
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
         $this->assertEquals($route->getName(), 'name');
     }
+
+    public function testDerive()
+    {
+        $middleware1 = $this->createMock(MiddlewareInterface::class);
+        $middleware2 = $this->createMock(MiddlewareInterface::class);
+        $routeGroup = new RouteGroup('/foo', [$middleware1]);
+        $result = $routeGroup->derive('/bar', [$middleware2]);
+        $this->assertInstanceOf(RouteGroup::class, $result);
+        $result->add('GET', '/abc', 'handler');
+        $route = $result->getRoutes()[0];
+        $this->assertEquals('/foo/bar/abc', $route->getPattern());
+        $this->assertEquals([$middleware1, $middleware2], $route->getMiddlewares());
+    }
 }

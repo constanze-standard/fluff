@@ -9,7 +9,7 @@ Fluff 并不是“开箱即用”的框架，我们希望在合理的架构之�
 
 ## 安装
 ```bash
-composer require constanze-standard/fluff "^2.0"
+composer require constanze-standard/fluff "^1.0"
 ```
 
 ## 最小应用示例

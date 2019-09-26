@@ -21,9 +21,12 @@ namespace ConstanzeStandard\Fluff\Middleware;
 use ConstanzeStandard\Fluff\Component\DispatchInformation;
 use ConstanzeStandard\Fluff\Component\Route;
 use ConstanzeStandard\Fluff\Component\RouteGroup;
+use ConstanzeStandard\Fluff\Component\RouteGroupProxy;
 use ConstanzeStandard\Fluff\Component\RouteService;
 use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
 use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
+use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
 use ConstanzeStandard\Fluff\Traits\HttpRouteHelperTrait;
 use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
 use ConstanzeStandard\Routing\Matcher;
@@ -41,7 +44,7 @@ use SplObjectStorage;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class RouterMiddleware implements MiddlewareInterface
+class RouterMiddleware extends RouteGroupProxy implements MiddlewareInterface
 {
     use HttpRouteHelperTrait;
 
@@ -62,7 +65,7 @@ class RouterMiddleware implements MiddlewareInterface
     /**
      * Global middlewares.
      * 
-     * @var RouteGroup[]
+     * @var RouteGroupInterface[]
      */
     private $routeGroups = [];
 
@@ -88,68 +91,43 @@ class RouterMiddleware implements MiddlewareInterface
     private $groupHandlers;
 
     /**
-     * @param RouteCollectionInterface|null $collection
+     * @param RouteCollectionInterface|string|null $option
      */
-    public function __construct(RouteCollectionInterface $collection = null)
+    public function __construct($option = null)
     {
-        $this->collection = $collection ?? new RouteCollection();
+        parent::__construct(new RouteGroup());
+
+        $this->collection = $option instanceof RouteCollectionInterface ?
+            $option : new RouteCollection($option);
+
         $this->routeService = new RouteService(
-            $collection ? $this->collectionToRoutes($this->collection) : []
+            $this->collectionToRoutes($this->collection)
         );
 
-        $this->group = new RouteGroup('', $this->middlewares);
         $this->groupHandlers = new SplObjectStorage();
     }
 
     /**
      * Get the routeService.
      * 
-     * @return RouteService
+     * @return RouteServiceInterface
      */
-    public function getRouteService(): RouteService
+    public function getRouteService(): RouteServiceInterface
     {
         return $this->routeService;
     }
 
     /**
-     * Add a router middleware.
+     * Add a route group.
      * 
-     * @param MiddlewareInterface $middleware
+     * @param RouteGroupInterface $routeGroup
      * 
-     * @return MiddlewareInterface
+     * @return RouteGroupInterface
      */
-    public function addMiddleware(MiddlewareInterface $middleware): MiddlewareInterface
+    public function addRouteGroup(RouteGroupInterface $routeGroup): RouteGroupInterface
     {
-        $this->middlewares[] = $middleware;
-        return $this->group->addMiddleware($middleware);
-    }
-
-    /**
-     * Add a route to collection.
-     * 
-     * @param Route $route
-     * 
-     * @return Route
-     */
-    public function addRoute(Route $route)
-    {
-        return $this->group->addRoute($route);
-    }
-
-    /**
-     * Register route data to collection.
-     *
-     * @param array|string $methods
-     * @param string $pattern
-     * @param \Closure|array|string $handler
-     * @param MiddlewareInterface[] $middlewares
-     * @param string|null $name
-     * 
-     * @return Route
-     */
-    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
-    {
-        return $this->group->add($methods, $pattern, $handler, $middlewares, $name);
+        $this->routeGroups[] = $routeGroup;
+        return $routeGroup;
     }
 
     /**
@@ -158,13 +136,13 @@ class RouterMiddleware implements MiddlewareInterface
      * @param callable $callback
      * @param string $prefix
      * @param MiddlewareInterface[] $middlewares
+     * 
+     * @return RouteGroupInterface
      */
-    public function group(callable $callback, string $prefix = '', array $middlewares = [])
+    public function group(callable $callback, string $prefix = '', array $middlewares = []): RouteGroupInterface
     {
-        $middlewares = array_merge($this->middlewares, $middlewares);
-        $routeGroup = new RouteGroup($prefix, $middlewares);
-        $this->groupHandlers[$routeGroup] = $callback;
-        $this->routeGroups[] = $routeGroup;
+        $routeGroup = $this->deriveGroup($prefix, $middlewares);
+        $this->groupHandlers[$this->addRouteGroup($routeGroup)] = $callback;
         return $routeGroup;
     }
 
@@ -202,7 +180,7 @@ class RouterMiddleware implements MiddlewareInterface
      * 
      * @param RouteCollectionInterface $collection
      * 
-     * @return Route[]
+     * @return RouteInterface[]
      */
     private function collectionToRoutes(RouteCollectionInterface $collection): array
     {
@@ -228,7 +206,7 @@ class RouterMiddleware implements MiddlewareInterface
      */
     private function attachRouteCollection()
     {
-        $this->addRouteGroupToCollection($this->group);
+        $this->addRouteGroupToCollection($this->getRootGroup());
         foreach ($this->routeGroups as $routeGroup) {
             call_user_func($this->groupHandlers[$routeGroup], $routeGroup);
             $this->addRouteGroupToCollection($routeGroup);
@@ -238,9 +216,9 @@ class RouterMiddleware implements MiddlewareInterface
     /**
      * Add a route data to collection.
      * 
-     * @param RouteGroup $route
+     * @param RouteGroupInterface $route
      */
-    private function addRouteGroupToCollection(RouteGroup $routeGroup)
+    private function addRouteGroupToCollection(RouteGroupInterface $routeGroup)
     {
         foreach ($routeGroup->getRoutes() as $route) {
             $this->routeService->addRoute($route);
