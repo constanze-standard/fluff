@@ -29,14 +29,13 @@ $dispatcher = new Dispatcher(Handler::getDefinition());
 $app = new Application($dispatcher);
 
 $router = $app->addMiddleware(new RouterMiddleware());
-$app->addMiddleware(new EndOutputBuffer());
 
-$router->get('/user/{name}', function(ServerRequestInterface $request, $args) {
-    return new Response(200, [], 'Hello ' . $args['name']);
+$router->get('/love/{name}', function(ServerRequestInterface $request, $args) {
+    return new Response(200, [], "I ♥ {$args['name']}!");
 });
 
-$request = new ServerRequest('GET', '/user/World');
-$app->handle($request);
+$app->addMiddleware(new EndOutputBuffer());
+$app->handle(new ServerRequest('GET', '/love/Fluff'));
 ```
 
 ## 学习 Fluff
