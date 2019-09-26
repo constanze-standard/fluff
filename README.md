@@ -2,7 +2,7 @@
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
 
-web 开发再次变得有趣起来了！
+web 开发又一次变得有趣起来了！
 
 ## Fluff 是什么？
 - Fluff 是一个简单高效的 PHP [微框架](https://en.wikipedia.org/wiki/Microframework)，它为应用程序的构建提供多种形式的解决方案。
