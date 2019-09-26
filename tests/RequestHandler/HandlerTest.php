@@ -1,8 +1,7 @@
 <?php
 
 use ConstanzeStandard\Fluff\RequestHandler\Handler;
-use ConstanzeStandard\Fluff\RequestHandler\SingleHandler;
-use GuzzleHttp\Psr7\Response;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';

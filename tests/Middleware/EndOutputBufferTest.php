@@ -1,60 +1,106 @@
 <?php
 
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
-use GuzzleHttp\Psr7\Response;
+use Nyholm\Psr7\Stream;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
 class EndOutputBufferTest extends AbstractTest
 {
-    public function testProcess()
+    public function testCloseOutputBuffersWithFlushable()
     {
-        $middleware = new EndOutputBuffer(1);
-        $response = new Response(200, [], ' ');
-        /** @var ServerRequestInterface $mockRequest */
-        $mockRequest = $this->createMock(ServerRequestInterface::class);
-        /** @var RequestHandlerInterface $mockHandler */
-        $mockHandler = $this->createMock(RequestHandlerInterface::class);
-        $mockHandler->expects($this->once())->method('handle')->willReturn($response);
-        $result = $middleware->process($mockRequest, $mockHandler);
-        $this->assertEquals($result, $response);
+        $endOutputBuffer = new EndOutputBuffer();
+        $this->callMethod($endOutputBuffer, 'closeOutputBuffers', [0]);
+        $level = ob_get_level();
+        $this->assertEquals(0, $level);
         ob_start();
     }
 
-    public function testRespondClean()
+    public function testCloseOutputBuffersWithCleanable()
     {
-        $middleware = new EndOutputBuffer();
-        $response = new Response(200, [], ' ');
-        $middleware->respond($response, false);
-        $status = ob_get_status();
-        $content = file_get_contents('php://output');
-        $this->assertEmpty($status);
-        $this->assertEmpty($content);
+        $endOutputBuffer = new EndOutputBuffer();
+        $this->callMethod($endOutputBuffer, 'closeOutputBuffers', [0, false]);
+        $level = ob_get_level();
+        $this->assertEquals(0, $level);
+        ob_start();
+    }
+
+    public function testCloseOutputBuffersWithFastcgiFinishRequest()
+    {
+        $endOutputBuffer = new EndOutputBuffer();
+        function fastcgi_finish_request() {
+            ob_end_clean();
+        }
+        $this->callMethod($endOutputBuffer, 'closeOutputBuffers', [0, true]);
+        $level = ob_get_level();
+        $this->assertEquals(0, $level);
         ob_start();
     }
 
     /**
      * @runInSeparateProcess
      */
-    public function testRespondHeader()
+    public function testProcess()
     {
-        $middleware = new EndOutputBuffer(1, false);
-        $response = new Response(200, ['Content-Type' => 'text/plain']);
-        $this->callMethod($middleware, 'respondHeader', [$response]);
-        $this->assertFalse(headers_sent());
+        $body = $this->createMock(StreamInterface::class);
+        $body->expects($this->once())->method('isSeekable')->willReturn(true);
+        $body->expects($this->once())->method('rewind');
+        $body->expects($this->exactly(0))->method('getSize')->willReturn(2);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())->method('getProtocolVersion')->willReturn('1.1');
+        $response->expects($this->once())->method('getStatusCode')->willReturn(200);
+        $response->expects($this->once())->method('getReasonPhrase')->willReturn('OK');
+        $response->expects($this->once())->method('getHeaders')->willReturn([
+            'Content-Type' => ['text/html']
+        ]);
+        $response->expects($this->once())->method('getBody')->willReturn($body);
+        $response->expects($this->once())->method('getHeaderLine')->with('Content-Length')->willReturn(2);
+
+        /** @var ServerRequestInterface $request */
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())->method('getMethod')->willReturn('GET');
+
+        /** @var RequestHandlerInterface $requestHandler */
+        $requestHandler = $this->createMock(RequestHandlerInterface::class);
+        $requestHandler->expects($this->once())->method('handle')->with($request)->willReturn($response);
+
+        $endOutputBuffer = new EndOutputBuffer();
+        $endOutputBuffer->process($request, $requestHandler);
+        ob_start();
     }
 
-    public function testEndOutputBuffersWithFastcgi()
+    /**
+     * @runInSeparateProcess
+     */
+    public function testProcessWithoutLength()
     {
-        if (!\function_exists('fastcgi_finish_request')) {
-            function fastcgi_finish_request() {
-                return true;
-            }
-        }
-        $middleware = new EndOutputBuffer();
-        $result = $this->callMethod($middleware, 'endOutputBuffers', [true]);
-        $this->assertTrue($result);
+        $body = Stream::create();
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())->method('getProtocolVersion')->willReturn('1.1');
+        $response->expects($this->once())->method('getStatusCode')->willReturn(200);
+        $response->expects($this->once())->method('getReasonPhrase')->willReturn('OK');
+        $response->expects($this->once())->method('getHeaders')->willReturn([
+            'Content-Type' => ['text/html']
+        ]);
+        $response->expects($this->once())->method('getBody')->willReturn($body);
+        $response->expects($this->once())->method('getHeaderLine')->with('Content-Length')->willReturn(null);
+
+        /** @var ServerRequestInterface $request */
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects($this->once())->method('getMethod')->willReturn('GET');
+
+        /** @var RequestHandlerInterface $requestHandler */
+        $requestHandler = $this->createMock(RequestHandlerInterface::class);
+        $requestHandler->expects($this->once())->method('handle')->with($request)->willReturn($response);
+
+        $endOutputBuffer = new EndOutputBuffer();
+        $endOutputBuffer->process($request, $requestHandler);
+        ob_start();
     }
 }

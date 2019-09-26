@@ -1,8 +1,9 @@
 <?php
 
+use Beige\Invoker\Interfaces\InvokerInterface;
 use Beige\Psr11\Container;
 use ConstanzeStandard\Fluff\RequestHandler\DiHandler;
-use GuzzleHttp\Psr7\Response;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -40,11 +41,7 @@ class DiHandlerTest extends AbstractTest
 
     public function testHandlerIsString()
     {
-        $response = $this->createMock(ResponseInterface::class);
         $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
         $handler = new DiHandler($container, 'StringTest@index');
 
         /** @var ServerRequestInterface $request */
@@ -55,17 +52,30 @@ class DiHandlerTest extends AbstractTest
 
     public function testHandlerIsInvoke()
     {
-        $response = $this->createMock(ResponseInterface::class);
         $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
         $handler = new DiHandler($container, 'StringTest');
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $result = $handler->handle($request);
         $this->assertInstanceOf(Response::class, $result);
+    }
+
+    public function testHandlerIsInvokeWithContainer()
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $container = new Container();
+        $invoker = $this->createMock(InvokerInterface::class);
+        $stringTest = new StringTest();
+        $invoker->expects($this->once())->method('callMethod')->with($stringTest, DiHandler::DEFAULT_HANDLER_METHOD, [])->willReturn($response);
+        $invoker->expects($this->once())->method('new')->with('StringTest')->willReturn($stringTest);
+        $container->set(InvokerInterface::class, $invoker);
+        $handler = new DiHandler($container, 'StringTest');
+
+        /** @var ServerRequestInterface $request */
+        $request = $this->createMock(ServerRequestInterface::class);
+        $result = $handler->handle($request);
+        $this->assertEquals($response, $result);
     }
 
     /**

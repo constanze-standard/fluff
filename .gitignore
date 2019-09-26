@@ -3,3 +3,4 @@ composer.lock
 tests/codeCoverage
 .DS_Store
 /example
+.vscode

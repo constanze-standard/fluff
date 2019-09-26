@@ -2,9 +2,10 @@
 
 namespace ConstanzeStandard\Fluff\Exception;
 
+use ConstanzeStandard\Standard\Http\Server\NotFoundExceptionInterface;
 use RuntimeException;
 
-class NotFoundException extends RuntimeException
+class HttpNotFoundException extends RuntimeException implements NotFoundExceptionInterface
 {
     /**
      * @param string $message

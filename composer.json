@@ -11,7 +11,8 @@
         "psr/http-server-middleware": "^1.0",
         "php-http/message": "^1.7",
         "beige/invoker": "^2.0",
-        "constanze-standard/router": "^1.0",
+        "constanze-standard/http-server-router": "^1.0",
+        "constanze-standard/routing": "^1.0",
         "constanze-standard/request-handler": "^1.0"
     },
     "require-dev": {
@@ -29,5 +30,10 @@
     "suggest": {
         "nyholm/psr7-server": "Helper classes to handle PSR-7 server requests.",
         "nyholm/psr7": "A fast PHP7 implementation of PSR-7."
+    },
+    "scripts": {
+        "start": "php -S 0.0.0.0:8080 -t ./",
+        "cc-start": "php -S 0.0.0.0:8888 -t ./tests/codeCoverage/",
+        "test": "phpunit --coverage-html ./tests/codeCoverage tests"
     }
 }

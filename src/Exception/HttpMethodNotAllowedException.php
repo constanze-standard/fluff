@@ -2,9 +2,10 @@
 
 namespace ConstanzeStandard\Fluff\Exception;
 
+use ConstanzeStandard\Standard\Http\Server\MethodNotAllowedExceptionInterface;
 use RuntimeException;
 
-class MethodNotAllowedException extends RuntimeException
+class HttpMethodNotAllowedException extends RuntimeException implements MethodNotAllowedExceptionInterface
 {
     /**
      * @param string $message
@@ -21,7 +22,7 @@ class MethodNotAllowedException extends RuntimeException
      * 
      * @return array
      */
-    public function getAllowedMethods()
+    public function getAllowedMethods(): array
     {
         return $this->allowedMethods;
     }

@@ -42,16 +42,15 @@ class EndOutputBuffer implements MiddlewareInterface
      * 
      * @param bool $isFlush
      */
-    private static function endOutputBuffers($isFlush)
+    private static function closeOutputBuffers(int $targetLevel, $isFlush = true)
     {
         if ($isFlush && \function_exists('fastcgi_finish_request')) {
             return fastcgi_finish_request();
         }
-
         $status = ob_get_status(true);
         $level = \count($status);
         $flags = PHP_OUTPUT_HANDLER_REMOVABLE | ($isFlush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
-        while ($level > 0) {
+        while ($level > $targetLevel) {
             $level--;
             $s = $status[$level];
             if ((isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
@@ -88,24 +87,47 @@ class EndOutputBuffer implements MiddlewareInterface
     }
 
     /**
-     * Emit the response, flush or clean the output buffer.
+     * Emit the response, flush and clean the output buffer.
      * 
      * @param ResponseInterface $response the PSR-7 response.
      */
     public function respond(ResponseInterface $response, $flush = true)
     {
         if ($flush) {
-            $outputHandle = fopen('php://output', 'a');
-            foreach ($this->respondContents($response) as $partOfContent) {
-                fwrite($outputHandle, $partOfContent);
-                if (ob_get_level() > 0) {
-                    flush();
-                    ob_flush();
+            $body = $response->getBody();
+            if ($body->isSeekable()) {
+                $body->rewind();
+            }
+
+            $contentLength  = $response->getHeaderLine('Content-Length');
+            if (!$contentLength) {
+                $contentLength = $body->getSize();
+            }
+
+            $outputHandle = fopen('php://output', 'w');
+            if ((int) $contentLength) {
+                while ($contentLength > 0 && !$body->eof()) {
+                    $length = min($this->chunkSize, (int)$contentLength);
+                    $contentLength -= $length;
+                    fwrite($outputHandle, $body->read($length));
+
+                    if (connection_status() !== CONNECTION_NORMAL) {
+                        break;
+                    }
+                }
+            } else {
+                while (!$body->eof()) {
+                    fwrite($outputHandle, $body->read($this->chunkSize));
+
+                    if (connection_status() !== CONNECTION_NORMAL) {
+                        break;
+                    }
                 }
             }
+
             fclose($outputHandle);
         }
-        static::endOutputBuffers($flush);
+        static::closeOutputBuffers(0);
     }
 
     /**
@@ -122,37 +144,13 @@ class EndOutputBuffer implements MiddlewareInterface
             header(sprintf('HTTP/%s %s %s', $version, $statusCode, $reasonPhrase));
 
             foreach ($response->getHeaders() as $key => $headers) {
-                $replace = 0 === strcasecmp($key, 'content-type');
-                foreach ($headers as $header) {
-                    header($key . ': ' . $header, $replace);
+                if (0 !== strcasecmp($key, 'set-cookie')) {
+                    $replace = 0 === strcasecmp($key, 'content-type');
+                    foreach ($headers as $header) {
+                        header("{$key}: {$header}", $replace);
+                    }
                 }
             }
-        }
-    }
-
-    /**
-     * Get accept contents iterable.
-     * 
-     * @param ResponseInterface $response
-     * 
-     * @return iterable
-     */
-    private function respondContents(ResponseInterface $response): iterable
-    {
-        $body = $response->getBody();
-        if ($body->isSeekable()) {
-            $body->rewind();
-        }
-
-        $contentLength  = $response->getHeaderLine('Content-Length');
-        if (!$contentLength) {
-            $contentLength = $body->getSize();
-        }
-
-        while ($contentLength > 0 && !$body->eof()) {
-            $length = min($this->chunkSize, (int)$contentLength);
-            $contentLength -= $length;
-            yield $body->read($length);
         }
     }
 }

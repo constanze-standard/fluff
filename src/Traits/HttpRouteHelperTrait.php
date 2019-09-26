@@ -38,7 +38,7 @@ trait HttpRouteHelperTrait
      */
     public function get($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        return $this->withRoute('GET', $pattern, $handler, $middlewares, $name);
+        return $this->add('GET', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -53,7 +53,7 @@ trait HttpRouteHelperTrait
      */
     public function post($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        return $this->withRoute('POST', $pattern, $handler, $middlewares, $name);
+        return $this->add('POST', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -68,7 +68,7 @@ trait HttpRouteHelperTrait
      */
     public function delete($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        return $this->withRoute('DELETE', $pattern, $handler, $middlewares, $name);
+        return $this->add('DELETE', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -83,7 +83,7 @@ trait HttpRouteHelperTrait
      */
     public function put($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        return $this->withRoute('PUT', $pattern, $handler, $middlewares, $name);
+        return $this->add('PUT', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -98,7 +98,7 @@ trait HttpRouteHelperTrait
      */
     public function options($pattern, $handler, array $middlewares = [], string $name = null): Route
     {
-        return $this->withRoute('OPTIONS', $pattern, $handler, $middlewares, $name);
+        return $this->add('OPTIONS', $pattern, $handler, $middlewares, $name);
     }
 
     /**
@@ -112,5 +112,5 @@ trait HttpRouteHelperTrait
      * 
      * @return Route
      */
-    abstract public function withRoute($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route;
+    abstract public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route;
 }

@@ -53,7 +53,7 @@ class DelayHandler implements RequestHandlerInterface
     private $initialArguments;
 
     /**
-     * Get the `DelayHandler` definition.
+     * Get the `Delay` handler definition.
      * 
      * @param mixed[] $initialArguments
      * 
@@ -61,7 +61,7 @@ class DelayHandler implements RequestHandlerInterface
      */
     public static function getDefinition(...$initialArguments)
     {
-        return function($handler, $arguments) use ($initialArguments) {
+        return function($handler, array $arguments) use ($initialArguments) {
             return new static($handler, $arguments, ...$initialArguments);
         };
     }

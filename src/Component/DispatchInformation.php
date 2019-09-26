@@ -18,6 +18,7 @@
 
 namespace ConstanzeStandard\Fluff\Component;
 
+use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Psr\Http\Server\MiddlewareInterface;
 
 /**
@@ -25,10 +26,8 @@ use Psr\Http\Server\MiddlewareInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class DispatchData
+class DispatchInformation implements DispatchInformationInterface
 {
-    const ATTRIBUTE_NAME = 'DISPATCH_DATA_ATTRIBUTE_NAME';
-
     /**
      * The request callback.
      * 
@@ -65,7 +64,7 @@ class DispatchData
     /**
      * Get the request callback.
      * 
-     * @return callable|array
+     * @return callable|array|string
      */
     public function getHandler()
     {

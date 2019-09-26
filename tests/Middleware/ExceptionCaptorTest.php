@@ -1,7 +1,7 @@
 <?php
 
 use ConstanzeStandard\Fluff\Middleware\ExceptionCaptor;
-use GuzzleHttp\Psr7\Response;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 

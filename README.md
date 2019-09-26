@@ -2,17 +2,19 @@
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
 
-## 关于 Fluff
-Fluff 是一个为 web 应用打造的微框架。它整合了当今主流的实践标准，帮助你实现高可用性的应用程序。
+web 开发又一次变得有趣起来了！
 
-Fluff 并不是“开箱即用”的框架，我们希望在合理的架构之下，对应用的各个层面做到最细粒度的控制，不同组件相互配合，可以衍生出多种架构风格。这也意味着相比传统意义上的 MVC 框架会有更多的前期准备，但随着工作的进行，应用程序也将更加符合你的预期。
+## Fluff 是什么？
+- Fluff 是一个多核心的 PHP [微框架](https://en.wikipedia.org/wiki/Microframework)，它为应用程序的构建提供多种形式的解决方案。
+- Fluff 是一个能够随需求的增加而不断成长的渐进式框架。从一段处理逻辑到一个庞大的架构，它可以以任何形式出现在你的程序之中。
 
 ## 安装
 ```bash
-composer require constanze-standard/fluff "^2.0"
+composer require constanze-standard/fluff "^1.0"
 ```
 
-## 最小应用示例
+## 示例
+需要安装组件 [`nyholm/psr7`](https://github.com/Nyholm/psr7)
 ```php
 use ConstanzeStandard\Fluff\Application;
 use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
@@ -29,15 +31,14 @@ $dispatcher = new Dispatcher(Handler::getDefinition());
 $app = new Application($dispatcher);
 
 $router = $app->addMiddleware(new RouterMiddleware());
-$app->addMiddleware(new EndOutputBuffer());
 
-$router->get('/user/{name}', function(ServerRequestInterface $request, $args) {
-    return new Response(200, [], 'Hello ' . $args['name']);
+$router->get('/love/{name}', function(ServerRequestInterface $request, $args) {
+    return new Response(200, [], "I ♥ {$args['name']}!");
 });
 
-$request = new ServerRequest('GET', '/user/World');
-$app->handle($request);
+$app->addMiddleware(new EndOutputBuffer());
+$app->handle(new ServerRequest('GET', '/love/Fluff'));
 ```
 
 ## 学习 Fluff
-请前往 [Fluff 文档页](https://constanze-standard.github.io/fluff-framework-documentation/) 查看帮助文档。
+如上例所示，Fluff 的核心是可替换的，选用不同的核心将会启用不同的特性。了解更多使用方式，请阅读我们的 [Fluff 官方文档](https://constanze-standard.github.io/fluff-framework-documentation/)。

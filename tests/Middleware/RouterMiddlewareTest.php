@@ -1,16 +1,13 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\HttpRouter;
-use ConstanzeStandard\Fluff\Component\DispatchData;
 use ConstanzeStandard\Fluff\Component\Route;
-use ConstanzeStandard\Fluff\Exception\MethodNotAllowedException;
-use ConstanzeStandard\Fluff\Interfaces\RouteParserInterface;
+use ConstanzeStandard\Fluff\Component\RouteGroup;
+use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
+use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
 use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
-use ConstanzeStandard\Route\Dispatcher;
-use ConstanzeStandard\Route\Interfaces\CollectionInterface;
-use ConstanzeStandard\Route\Interfaces\DispatcherInterface;
+use ConstanzeStandard\Routing\RouteCollection;
+use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
@@ -18,250 +15,137 @@ require_once __DIR__ . '/../AbstractTest.php';
 
 class RouterMiddlewareTest extends AbstractTest
 {
+    public function testGetRouteService()
+    {
+        $routerMiddleware = new RouterMiddleware();
+        $result = $routerMiddleware->getRouteService();
+        $this->assertInstanceOf(RouteServiceInterface::class, $result);
+    }
+
     public function testAddMiddleware()
     {
-        /** @var RequestHandlerInterface $requestHandler */
         /** @var MiddlewareInterface $middleware */
-
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
         $middleware = $this->createMock(MiddlewareInterface::class);
-        $router = new RouterMiddleware($collector);
+        $routeGroup = $this->createMock(RouteGroup::class);
+        $routeGroup->expects($this->once())->method('addMiddleware')->willReturn($middleware);
+        $routerMiddleware = new RouterMiddleware();
+        $this->setProperty($routerMiddleware, 'routeGroup', $routeGroup);
+        $result = $routerMiddleware->addMiddleware($middleware);
+        $this->assertEquals($middleware, $result);
+    }
+
+    public function testAddRoute()
+    {
+        /** @var Route $route */
         $route = $this->createMock(Route::class);
-        $route->expects($this->once())->method('addMiddleware')->with($middleware);
-        $this->setProperty($router, 'routes', [$route]);
-        $result = $router->addMiddleware($middleware);
-        $this->assertEquals($result, $middleware);
+        $routeGroup = $this->createMock(RouteGroup::class);
+        $routeGroup->expects($this->once())->method('addRoute')->with($route)->willReturn($route);
+        $routerMiddleware = new RouterMiddleware();
+        $this->setProperty($routerMiddleware, 'routeGroup', $routeGroup);
+        $result = $routerMiddleware->addRoute($route);
+        $this->assertEquals($route, $result);
     }
 
-    public function testWithRoute()
+    public function testAddWithPrefix()
     {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-        $this->setProperty($router, 'privPrefix', '/prefix');
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->withRoute('GET', '/foo', 'controller', [$middleware], 'test');
+        /** @var Route $route */
+        $route = $this->createMock(Route::class);
+        $routerMiddleware = (new RouterMiddleware())->setPrefix('/foo');
+        $result = $routerMiddleware->add('GET', '/bar', 'handler');
         $this->assertInstanceOf(Route::class, $result);
+        $this->assertEquals($result->getPattern(), '/foo/bar');
     }
 
-    public function testWithGroup()
+    public function testGroup()
     {
+        /** @var MiddlewareInterface $middleware1 */
         $middleware1 = $this->createMock(MiddlewareInterface::class);
+        /** @var MiddlewareInterface $middleware2 */
         $middleware2 = $this->createMock(MiddlewareInterface::class);
-        $middleware3 = $this->createMock(MiddlewareInterface::class);
-        $router = new RouterMiddleware();
-        $this->setProperty($router, 'privPrefix', '/prefix');
-        $this->setProperty($router, 'privMiddlewares', [$middleware1]);
-
-        $router->withGroup('/foo', [$middleware2], function($router) use ($middleware3) {
-            $router->withRoute('GET', '/bar', 'controller', [$middleware3]);
-        });
-        $privPrefix = $this->getProperty($router, 'privPrefix');
-        $privMiddlewares = $this->getProperty($router, 'privMiddlewares');
-        $this->assertEquals($privPrefix, '/prefix');
-        $this->assertEquals($privMiddlewares, [$middleware1]);
+        $func = function(RouteGroupInterface $route) {
+            $route->add('GET', '/g1', 'handler');
+        };
+        $routeGroup = $this->createMock(RouteGroupInterface::class);
+        $routerMiddleware = new RouterMiddleware();
+        $routerMiddleware->addMiddleware($middleware2);
+        $this->setProperty($routerMiddleware, 'routeGroup', $routeGroup);
+        $result = $routerMiddleware->group($func, '/foo', [$middleware1]);
+        $this->assertInstanceOf(RouteGroupInterface::class, $result);
     }
 
-    public function testDispatch()
+    public function testProcessWithStatusOK()
     {
-        /** @var RequestHandlerInterface $requestHandler */
-        /** @var ServerRequestInterface $request */
-        /** @var CollectionInterface $collector */
-
-        $dispatchData = new DispatchData('routeHandler', [1], ['id' => 1]);
+        $routerMiddleware = new RouterMiddleware();
+        $routerMiddleware->add('GET', '/foo', 'handler');
+        $serverRequest = new ServerRequest('GET', '/foo');
         $response = $this->createMock(ResponseInterface::class);
+
+        /** @var RequestHandlerInterface $requestHandler */
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
         $requestHandler->expects($this->once())->method('handle')->willReturn($response);
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('GET');
-        $request->expects($this->once())->method('getUri')->willReturn('/foo');
-        $request->expects($this->once())->method('withAttribute')
-            ->with('route', $dispatchData)
-            ->willReturn($request);
-        $collector = $this->createMock(CollectionInterface::class);
-        /** @var DispatcherInterface $dispatcher */
-        $dispatcher = $this->createMock(DispatcherInterface::class);
-        $dispatcher->expects($this->once())->method('dispatch')->willReturn([
-            Dispatcher::STATUS_OK, 'routeHandler', ['middlewares' => [1]], ['id' => 1]
-        ]);
-        $router = new RouterMiddleware($collector, 'route');
-        $this->setProperty($router, 'dispatcher', $dispatcher);
-        $result = $router->process($request, $requestHandler);
+
+        $result = $routerMiddleware->process($serverRequest, $requestHandler);
         $this->assertEquals($result, $response);
     }
 
     /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\MethodNotAllowedException
+     * @expectedException \ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException
      */
-    public function testDispatchERROR_METHOD_NOT_ALLOWED()
+    public function testProcessWithHttpMethodNotAllowedException()
     {
-        /** @var RequestHandlerInterface $requestHandler */
-        /** @var ServerRequestInterface $request */
-        /** @var CollectionInterface $collector */
-
+        $routerMiddleware = new RouterMiddleware();
+        $routerMiddleware->add('GET', '/foo', 'handler');
+        $serverRequest = new ServerRequest('POST', '/foo');
         $response = $this->createMock(ResponseInterface::class);
+
+        /** @var RequestHandlerInterface $requestHandler */
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
-        $requestHandler->expects($this->exactly(0))->method('handle')->willReturn($response);
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('GET');
-        $request->expects($this->once())->method('getUri')->willReturn('/foo');
-        $request->expects($this->exactly(0))->method('withAttribute')
-            ->with('route', ['routeHandler', [1], ['id' => 1]])
-            ->willReturn($request);
-        $collector = $this->createMock(CollectionInterface::class);
-        /** @var DispatcherInterface $dispatcher */
-        $dispatcher = $this->createMock(DispatcherInterface::class);
-        $dispatcher->expects($this->once())->method('dispatch')->willReturn([
-            Dispatcher::STATUS_ERROR, Dispatcher::ERROR_METHOD_NOT_ALLOWED, ['POST']
-        ]);
-        $router = new RouterMiddleware($collector, 'route');
-        $this->setProperty($router, 'dispatcher', $dispatcher);
-        $router->process($request, $requestHandler);
+        $routerMiddleware->process($serverRequest, $requestHandler);
     }
 
     /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\NotFoundException
+     * @expectedException \ConstanzeStandard\Fluff\Exception\HttpNotFoundException
      */
-    public function testDispatchERROR_NOT_FOUND()
+    public function testProcessWithHttpNotFoundException()
     {
+        $routerMiddleware = new RouterMiddleware();
+        $routerMiddleware->add('GET', '/foo/bar', 'handler');
+        $serverRequest = new ServerRequest('GET', '/foo');
+
         /** @var RequestHandlerInterface $requestHandler */
-        /** @var ServerRequestInterface $request */
-        /** @var CollectionInterface $collector */
-
-        $response = $this->createMock(ResponseInterface::class);
         $requestHandler = $this->createMock(RequestHandlerInterface::class);
-        $requestHandler->expects($this->exactly(0))->method('handle')->willReturn($response);
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('GET');
-        $request->expects($this->once())->method('getUri')->willReturn('/foo');
-        $request->expects($this->exactly(0))->method('withAttribute')
-            ->with('route', ['routeHandler', [1], ['id' => 1]])
-            ->willReturn($request);
-        $collector = $this->createMock(CollectionInterface::class);
-        /** @var DispatcherInterface $dispatcher */
-        $dispatcher = $this->createMock(DispatcherInterface::class);
-        $dispatcher->expects($this->once())->method('dispatch')->willReturn([
-            Dispatcher::STATUS_ERROR, Dispatcher::ERROR_NOT_FOUND
-        ]);
-        $router = new RouterMiddleware($collector, 'route');
-        $this->setProperty($router, 'dispatcher', $dispatcher);
-        $router->process($request, $requestHandler);
+        $routerMiddleware->process($serverRequest, $requestHandler);
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
-    public function testDispatchOtherError()
+    public function testAttachRouteCollection()
     {
-        /** @var RequestHandlerInterface $requestHandler */
-        /** @var ServerRequestInterface $request */
-        /** @var CollectionInterface $collector */
+        $routerMiddleware = new RouterMiddleware();
+        $routeGroup1 = $this->createMock(RouteGroup::class);
+        $routeGroup2 = $this->createMock(RouteGroup::class);
+        $routeGroup1->expects($this->once())->method('getRoutes')->willReturn([]);
+        $routeGroup2->expects($this->once())->method('getRoutes')->willReturn([]);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $requestHandler = $this->createMock(RequestHandlerInterface::class);
-        $requestHandler->expects($this->exactly(0))->method('handle')->willReturn($response);
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('GET');
-        $request->expects($this->once())->method('getUri')->willReturn('/foo');
-        $request->expects($this->exactly(0))->method('withAttribute')
-            ->with('route', ['routeHandler', [1], ['id' => 1]])
-            ->willReturn($request);
-        $collector = $this->createMock(CollectionInterface::class);
-        /** @var DispatcherInterface $dispatcher */
-        $dispatcher = $this->createMock(DispatcherInterface::class);
-        $dispatcher->expects($this->once())->method('dispatch')->willReturn([
-            'STATUS_UNKONW'
-        ]);
-        $router = new RouterMiddleware($collector, 'route');
-        $this->setProperty($router, 'dispatcher', $dispatcher);
-        $router->process($request, $requestHandler);
+        $this->setProperty($routerMiddleware, 'routeGroups', [$routeGroup1, $routeGroup2]);
+
+        $store = new \SplObjectStorage();
+        $store[$routeGroup1] = function(RouteGroup $routeGroup) use ($routeGroup1) {
+            $this->assertEquals($routeGroup, $routeGroup1);
+        };
+        $store[$routeGroup2] = function(RouteGroup $routeGroup)  use ($routeGroup2) {
+            $this->assertEquals($routeGroup, $routeGroup2);
+        };
+        $this->setProperty($routerMiddleware, 'groupHandlers', $store);
+        $this->callMethod($routerMiddleware, 'attachRouteCollection');
     }
 
-    public function testGet()
+    public function testCollectionToRoutes()
     {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-        $this->setProperty($router, 'privPrefix', '/prefix');
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->get('/foo', 'controller', [$middleware], 'test');
-        $this->assertInstanceOf(Route::class, $result);
-    }
+        $collection = new RouteCollection();
+        $collection->add('GET', '/foo', 'serializable', 'unserializable');
+        $routerMiddleware = new RouterMiddleware();
 
-    public function testPost()
-    {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-        $this->setProperty($router, 'privPrefix', '/prefix');
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->post('/foo', 'controller', [$middleware], 'test');
-        $this->assertInstanceOf(Route::class, $result);
-    }
-
-    public function testPut()
-    {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-        $this->setProperty($router, 'privPrefix', '/prefix');
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->put('/foo', 'controller', [$middleware], 'test');
-        $this->assertInstanceOf(Route::class, $result);
-    }
-
-    public function testDelete()
-    {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-        $this->setProperty($router, 'privPrefix', '/prefix');
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->delete('/foo', 'controller', [$middleware], 'test');
-        $this->assertInstanceOf(Route::class, $result);
-    }
-
-    public function testOptions()
-    {
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-        $this->setProperty($router, 'privPrefix', '/prefix');
-
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        $result = $router->options('/foo', 'controller', [$middleware], 'test');
-        $this->assertInstanceOf(Route::class, $result);
-    }
-
-    public function testAttachCollection()
-    {
-        $middleware = $this->createMock(MiddlewareInterface::class);
-        /** @var CollectionInterface $collector */
-        $collector = $this->createMock(CollectionInterface::class);
-        $router = new RouterMiddleware($collector);
-
-        $collector->expects($this->once())
-            ->method('attach')
-            ->with('GET', '/user', 'Targe@index', ['middlewares' => [$middleware], 'name' => 'Alex']);
-
-        $route = $this->createMock(Route::class);
-        $route->expects($this->once())->method('getHandler')->willReturn('Targe@index');
-        $route->expects($this->once())->method('getPattern')->willReturn('/user');
-        $route->expects($this->once())->method('getHttpMethods')->willReturn('GET');
-        $route->expects($this->once())->method('getName')->willReturn('Alex');
-        $route->expects($this->once())->method('getMiddlewares')->willReturn([
-            $middleware
-        ]);
-
-        $this->setProperty($router, 'routes', [$route]);
-        $this->callMethod($router, 'attachCollection');
-    }
-
-    public function testGetRouteParser()
-    {
-        $router = new RouterMiddleware();
-        $result = $router->getRouteParser();
-        $this->assertInstanceOf(RouteParserInterface::class, $result);
+        $routes = $this->callMethod($routerMiddleware, 'collectionToRoutes', [$collection]);
+        $this->assertCount(1, $routes);
+        $this->assertInstanceOf(Route::class, $routes[0]);
     }
 }

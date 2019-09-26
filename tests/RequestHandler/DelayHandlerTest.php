@@ -2,7 +2,7 @@
 
 use Beige\Psr11\Container;
 use ConstanzeStandard\Fluff\RequestHandler\DelayHandler;
-use GuzzleHttp\Psr7\Response;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
