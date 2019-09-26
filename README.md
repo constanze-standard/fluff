@@ -41,4 +41,4 @@ $app->handle(new ServerRequest('GET', '/love/Fluff'));
 ```
 
 ## 学习 Fluff
-请前往 [Fluff 文档页](https://constanze-standard.github.io/fluff-framework-documentation/) 查看帮助文档。
+如上例所示，Fluff 的核心是可替换的，选用不同的核心将会启用不同的特性，包括“静态调用”，“延迟加载”和“依赖注入”。请前往 [Fluff 文档](https://constanze-standard.github.io/fluff-framework-documentation/) 了解具体的使用方式。
