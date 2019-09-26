@@ -2,10 +2,11 @@
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
 
-## 关于 Fluff
-Fluff 是一个为 web 应用打造的微框架。它整合了当今主流的实践标准，帮助你实现高可用性的应用程序。
+你在为 web 开发寻找一块自由、舒适的乐土？那么，请使用 Fluff，让创作回归自然。
 
-Fluff 并不是“开箱即用”的框架，我们希望在合理的架构之下，对应用的各个层面做到最细粒度的控制，不同组件相互配合，可以衍生出多种架构风格。这也意味着相比传统意义上的 MVC 框架会有更多的前期准备，但随着工作的进行，应用程序也将更加符合你的预期。
+## Fluff 是什么？
+- Fluff 是一个核心简单，且高效率的[微框架](https://en.wikipedia.org/wiki/Microframework)，它提供软件架构上多种形式的解决方案，但不会替你做出多余的决策，你将因此获得对于项目的全面掌控。
+- Fluff 是一个能够随需求的增加而不断成长的渐进式框架，从一段处理逻辑到一个宏大的架构，它可以以任何形式出现在你的程序之中。
 
 ## 安装
 ```bash
