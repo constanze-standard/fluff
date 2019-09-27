@@ -144,11 +144,9 @@ class EndOutputBuffer implements MiddlewareInterface
             header(sprintf('HTTP/%s %s %s', $version, $statusCode, $reasonPhrase));
 
             foreach ($response->getHeaders() as $key => $headers) {
-                if (0 !== strcasecmp($key, 'set-cookie')) {
-                    $replace = 0 === strcasecmp($key, 'content-type');
-                    foreach ($headers as $header) {
-                        header("{$key}: {$header}", $replace);
-                    }
+                $replace = 0 === strcasecmp($key, 'content-type');
+                foreach ($headers as $header) {
+                    header("{$key}: {$header}", $replace);
                 }
             }
         }
