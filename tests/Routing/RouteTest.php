@@ -1,6 +1,6 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\Route;
+use ConstanzeStandard\Fluff\Routing\Route;
 use Psr\Http\Server\MiddlewareInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';

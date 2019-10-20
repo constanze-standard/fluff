@@ -27,54 +27,42 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class DelayHandler implements RequestHandlerInterface
+class Args implements RequestHandlerInterface
 {
-    const DEFAULT_HANDLER_METHOD = '__invoke';
-
     /**
      * The single callable handler.
      * 
      * @var callable
      */
-    private $handler;
+    protected $handler;
 
     /**
      * The route url arguments.
      * 
      * @var array
      */
-    private $arguments;
+    protected $arguments;
 
     /**
-     * The initial arguments for handler.
-     * 
-     * @var array
-     */
-    private $initialArguments;
-
-    /**
-     * Get the `Delay` handler definition.
-     * 
-     * @param mixed[] $initialArguments
+     * Get the `Basic` handler definition.
      * 
      * @return \Closure
      */
-    public static function getDefinition(...$initialArguments)
+    public static function getDefinition()
     {
-        return function($handler, array $arguments) use ($initialArguments) {
-            return new static($handler, $arguments, ...$initialArguments);
+        return function($handler, array $arguments) {
+            return new static($handler, $arguments);
         };
     }
 
     /**
-     * @param callable|string $handler Callable object or class name.
+     * @param callable $handler
      * @param array $arguments
      */
-    public function __construct($handler, array $arguments = [], ...$initialArguments)
+    public function __construct(callable $handler, array $arguments = [])
     {
         $this->handler = $handler;
         $this->arguments = $arguments;
-        $this->initialArguments = $initialArguments;
     }
 
     /**
@@ -89,20 +77,6 @@ class DelayHandler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        if (is_callable($this->handler)) {
-            return (new Handler($this->handler, $this->arguments))->handle($request);
-        }
-
-        if (is_string($this->handler)) {
-            $callback = explode('@', $this->handler);
-            $className = $callback[0];
-            $handler = [
-                new $className(...$this->initialArguments),
-                $callback[1] ?? static::DEFAULT_HANDLER_METHOD
-            ];
-            return (new Handler($handler, $this->arguments))->handle($request);
-        }
-
-        throw new \InvalidArgumentException('Route handler must be string or callable.');
+        return call_user_func($this->handler, $request, $this->arguments);
     }
 }

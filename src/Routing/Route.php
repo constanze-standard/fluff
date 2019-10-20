@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Component;
+namespace ConstanzeStandard\Fluff\Routing;
 
 use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
 use Psr\Http\Server\MiddlewareInterface;

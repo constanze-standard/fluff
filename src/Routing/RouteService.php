@@ -16,10 +16,11 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Component;
+namespace ConstanzeStandard\Fluff\Routing;
 
 use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
+use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
 use RuntimeException;
 
 /**
@@ -35,6 +36,32 @@ class RouteService implements RouteServiceInterface
      * @var RouteInterface[]
      */
     private $routes;
+
+    /**
+     * Collection convert to routes.
+     * 
+     * @param RouteCollectionInterface $collection
+     * 
+     * @return RouteInterface[]
+     */
+    public static function fromRoutes(RouteCollectionInterface $collection): self
+    {
+        $routes = [];
+        $contents = $collection->getContents();
+        foreach ($contents as $map) {
+            foreach ($map as $method => $_contents) {
+                foreach ($_contents as $content) {
+                    [$pattern, $unserializableId, $serializable, ] = $content;
+                    $handler = $collection->getUnserializableById($unserializableId);
+                    $middlewares = $serializable['middlewares'] ?? [];
+                    $name = $serializable['name'] ?? null;
+                    $routes[] = new Route($method, $pattern, $handler, $middlewares, $name);
+                }
+            }
+        }
+
+        return new static($routes);
+    }
 
     /**
      * Set routes.

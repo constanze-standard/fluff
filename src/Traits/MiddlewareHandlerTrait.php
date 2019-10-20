@@ -44,7 +44,7 @@ trait MiddlewareHandlerTrait
     ): ResponseInterface
     {
         $requestDispatcher = new Dispatcher($childHandler);
-        $requestDispatcher = $this->generateMiddlewareStack(
+        $requestDispatcher = static::generateMiddlewareStack(
             $requestDispatcher,
             $middlewares
         );
@@ -60,7 +60,7 @@ trait MiddlewareHandlerTrait
      * 
      * @return RequestDispatcher
      */
-    private function generateMiddlewareStack(Dispatcher $requestDispatcher, $middlewares): Dispatcher
+    private static function generateMiddlewareStack(Dispatcher $requestDispatcher, $middlewares): Dispatcher
     {
         foreach ($middlewares as $middleware) {
             if ($middleware instanceof MiddlewareInterface) {

@@ -18,8 +18,9 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
+use ConstanzeStandard\Fluff\Routing\Router;
+use ConstanzeStandard\Fluff\Interfaces\RouterInterface;
 use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;
-use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -34,13 +35,6 @@ class Dispatcher implements RequestHandlerInterface
     use MiddlewareHandlerTrait;
 
     /**
-     * The dispatch data flag.
-     * 
-     * @var string
-     */
-    const DISPATCH_DATA_KEY = DispatchInformationInterface::class;
-
-    /**
      * The child handler definition.
      * 
      * @var callable
@@ -48,11 +42,30 @@ class Dispatcher implements RequestHandlerInterface
     private $definition;
 
     /**
-     * @param string $attributeName Default is `route`.
+     * The router.
+     * 
+     * @var RouterInterface
      */
-    public function __construct(callable $definition)
+    private $router;
+
+    /**
+     * @param string $attributeName Default is `route`.
+     * TODO: 这里可以应该从外部传入一个 RouterInterface 实例，代理全部的路由操作，将路由最大限度的与 Dispatcher 分离
+     */
+    public function __construct(callable $definition, RouterInterface $router = null)
     {
+        $this->router = $router ?? new Router();
         $this->definition = $definition;
+    }
+
+    /**
+     * Get the router.
+     * 
+     * @return RouterInterface
+     */
+    public function getRouter(): RouterInterface
+    {
+        return $this->router;
     }
 
     /**
@@ -65,20 +78,16 @@ class Dispatcher implements RequestHandlerInterface
      * @throws \RuntimeException
      * 
      * @return ResponseInterface
+     * 
+     * @throws HttpMethodNotAllowedException
+     * @throws HttpNotFoundException
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $dispatchInformation = $request->getAttribute(static::DISPATCH_DATA_KEY);
-
-        if ($dispatchInformation instanceof DispatchInformationInterface) {
-            $routeHandler = $dispatchInformation->getHandler();
-            $middlewares = $dispatchInformation->getMiddlewares();
-            $arguments = $dispatchInformation->getArguments();
-
-            $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
-            return $this->handleWithMiddlewares($middlewares, $request, $childHandler);
-        }
-
-        throw new \RuntimeException('The dispatch data is not exist.');
+        $result = $this->getRouter()->matchOrFail($request);
+        [$options, $routeHandler, $arguments] = $result;
+        $middlewares = $options['middlewares'] ?? [];
+        $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
+        return $this->handleWithMiddlewares($middlewares, $request, $childHandler);
     }
 }
