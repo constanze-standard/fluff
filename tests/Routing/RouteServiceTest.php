@@ -1,7 +1,7 @@
 <?php
 
-use ConstanzeStandard\Fluff\Component\Route;
-use ConstanzeStandard\Fluff\Component\RouteService;
+use ConstanzeStandard\Fluff\Routing\Route;
+use ConstanzeStandard\Fluff\Routing\RouteService;
 
 require_once __DIR__ . '/../AbstractTest.php';
 

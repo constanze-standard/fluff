@@ -1,16 +1,21 @@
 <?php
 
-use Beige\Invoker\Interfaces\InvokerInterface;
-use Beige\Psr11\Container;
-use ConstanzeStandard\Fluff\RequestHandler\DiHandler;
+use ConstanzeStandard\Container\Container;
+use ConstanzeStandard\Fluff\RequestHandler\Args;
+use ConstanzeStandard\Fluff\RequestHandler\Delay;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
-class StringTest
+class StringTest2
 {
+    public function __construct(Container $c)
+    {
+        $this->c = $c;
+    }
+
     public function index()
     {
         return new Response();
@@ -22,16 +27,16 @@ class StringTest
     }
 }
 
-class DiHandlerTest extends AbstractTest
+class DelayTest extends AbstractTest
 {
     public function testHandlerIsCallable()
     {
         $response = $this->createMock(ResponseInterface::class);
-        $container = new Container();
         $func = function() use ($response) {
             return $response;
         };
-        $handler = new DiHandler($container, $func);
+        $container = new Container();
+        $handler = new Delay(Args::getDefinition(), $func, [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -41,8 +46,12 @@ class DiHandlerTest extends AbstractTest
 
     public function testHandlerIsString()
     {
+        $response = $this->createMock(ResponseInterface::class);
         $container = new Container();
-        $handler = new DiHandler($container, 'StringTest@index');
+        $func = function() use ($response) {
+            return $response;
+        };
+        $handler = new Delay(Args::getDefinition(), 'StringTest2@index', [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -52,30 +61,17 @@ class DiHandlerTest extends AbstractTest
 
     public function testHandlerIsInvoke()
     {
+        $response = $this->createMock(ResponseInterface::class);
         $container = new Container();
-        $handler = new DiHandler($container, 'StringTest');
+        $func = function() use ($response) {
+            return $response;
+        };
+        $handler = new Delay(Args::getDefinition(), 'StringTest2', [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $result = $handler->handle($request);
         $this->assertInstanceOf(Response::class, $result);
-    }
-
-    public function testHandlerIsInvokeWithContainer()
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $container = new Container();
-        $invoker = $this->createMock(InvokerInterface::class);
-        $stringTest = new StringTest();
-        $invoker->expects($this->once())->method('callMethod')->with($stringTest, DiHandler::DEFAULT_HANDLER_METHOD, [])->willReturn($response);
-        $invoker->expects($this->once())->method('new')->with('StringTest')->willReturn($stringTest);
-        $container->set(InvokerInterface::class, $invoker);
-        $handler = new DiHandler($container, 'StringTest');
-
-        /** @var ServerRequestInterface $request */
-        $request = $this->createMock(ServerRequestInterface::class);
-        $result = $handler->handle($request);
-        $this->assertEquals($response, $result);
     }
 
     /**
@@ -88,7 +84,7 @@ class DiHandlerTest extends AbstractTest
         $func = function() use ($response) {
             return $response;
         };
-        $handler = new DiHandler($container, []);
+        $handler = new Delay(Args::getDefinition(), [], [], $container);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -98,8 +94,8 @@ class DiHandlerTest extends AbstractTest
     public function testGetDefinition_static()
     {
         $container = new Container();
-        $closure = DiHandler::getDefinition($container);
-        $result = $closure('StringTest', []);
-        $this->assertInstanceOf(DiHandler::class, $result);
+        $closure = Delay::getDefinition(Args::getDefinition());
+        $result = $closure('StringTest2', [], $container);
+        $this->assertInstanceOf(Delay::class, $result);
     }
 }

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Component;
+namespace ConstanzeStandard\Fluff\Routing;
 
 use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
@@ -58,7 +58,7 @@ class RouteGroupProxy
      * 
      * @return RouteInterface
      */
-    public function addRoute(RouteInterface $route)
+    public function addRoute(RouteInterface $route): RouteInterface
     {
         return $this->routeGroup->addRoute($route);
     }
@@ -72,9 +72,9 @@ class RouteGroupProxy
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
-     * @return Route
+     * @return RouteInterface
      */
-    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): Route
+    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->routeGroup->add($methods, $pattern, $handler, $middlewares, $name);
     }
@@ -99,7 +99,7 @@ class RouteGroupProxy
      * 
      * @return self
      */
-    public function setPrefix(string $prefix): self
+    public function setPrefix(string $prefix)
     {
         $this->routeGroup->setPrefix($prefix);
         return $this;

@@ -1,20 +1,16 @@
 <?php
 
-use Beige\Psr11\Container;
-use ConstanzeStandard\Fluff\RequestHandler\DelayHandler;
+use Beige\Invoker\Interfaces\InvokerInterface;
+use ConstanzeStandard\Container\Container;
+use ConstanzeStandard\Fluff\RequestHandler\Di;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
-class StringTest2
+class StringTest
 {
-    public function __construct(Container $c)
-    {
-        $this->c = $c;
-    }
-
     public function index()
     {
         return new Response();
@@ -26,16 +22,16 @@ class StringTest2
     }
 }
 
-class LasyHandlerTest extends AbstractTest
+class DiTest extends AbstractTest
 {
     public function testHandlerIsCallable()
     {
         $response = $this->createMock(ResponseInterface::class);
+        $container = new Container();
         $func = function() use ($response) {
             return $response;
         };
-        $container = new Container();
-        $handler = new DelayHandler($func, [], $container);
+        $handler = new Di($container, $func);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -45,12 +41,8 @@ class LasyHandlerTest extends AbstractTest
 
     public function testHandlerIsString()
     {
-        $response = $this->createMock(ResponseInterface::class);
         $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
-        $handler = new DelayHandler('StringTest2@index', [], $container);
+        $handler = new Di($container, 'StringTest@index');
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -60,12 +52,8 @@ class LasyHandlerTest extends AbstractTest
 
     public function testHandlerIsInvoke()
     {
-        $response = $this->createMock(ResponseInterface::class);
         $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
-        $handler = new DelayHandler('StringTest2', [], $container);
+        $handler = new Di($container, 'StringTest');
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -83,7 +71,7 @@ class LasyHandlerTest extends AbstractTest
         $func = function() use ($response) {
             return $response;
         };
-        $handler = new DelayHandler([], [], $container);
+        $handler = new Di($container, []);
 
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
@@ -93,8 +81,8 @@ class LasyHandlerTest extends AbstractTest
     public function testGetDefinition_static()
     {
         $container = new Container();
-        $closure = DelayHandler::getDefinition();
-        $result = $closure('StringTest2', [], $container);
-        $this->assertInstanceOf(DelayHandler::class, $result);
+        $closure = Di::getDefinition($container);
+        $result = $closure('StringTest', []);
+        $this->assertInstanceOf(Di::class, $result);
     }
 }

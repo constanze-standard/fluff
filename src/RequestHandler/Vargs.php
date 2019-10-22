@@ -27,44 +27,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class Handler implements RequestHandlerInterface
+class Vargs extends Args
 {
-    /**
-     * The single callable handler.
-     * 
-     * @var callable
-     */
-    private $handler;
-
-    /**
-     * The route url arguments.
-     * 
-     * @var array
-     */
-    private $arguments;
-
-    /**
-     * Get the `Basic` handler definition.
-     * 
-     * @return \Closure
-     */
-    public static function getDefinition()
-    {
-        return function($handler, array $arguments) {
-            return new static($handler, $arguments);
-        };
-    }
-
-    /**
-     * @param callable $handler
-     * @param array $arguments
-     */
-    public function __construct(callable $handler, array $arguments = [])
-    {
-        $this->handler = $handler;
-        $this->arguments = $arguments;
-    }
-
     /**
      * Handles a request and produces a response.
      *
@@ -77,6 +41,6 @@ class Handler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        return call_user_func($this->handler, $request, $this->arguments);
+        return call_user_func($this->handler, $request, ...array_values($this->arguments));
     }
 }

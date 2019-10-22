@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright 2019 Alex <blldxt@gmail.com>
  * 
@@ -15,16 +16,9 @@
  * limitations under the License.
  */
 
-namespace ConstanzeStandard\Fluff\Traits;
+namespace ConstanzeStandard\Fluff\Interfaces;
 
-use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
-
-/**
- * The router collection helper.
- * 
- * @author Alex <blldxt@gmail.com>
- */
-trait HttpRouteHelperTrait
+interface RouteHelperInterface
 {
     /**
      * Attach route to collector with `GET` method.
@@ -36,10 +30,7 @@ trait HttpRouteHelperTrait
      * 
      * @return RouteInterface
      */
-    public function get($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
-    {
-        return $this->add('GET', $pattern, $handler, $middlewares, $name);
-    }
+    public function get($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
 
     /**
      * Attach route to collector with `POST` method.
@@ -51,10 +42,7 @@ trait HttpRouteHelperTrait
      * 
      * @return RouteInterface
      */
-    public function post($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
-    {
-        return $this->add('POST', $pattern, $handler, $middlewares, $name);
-    }
+    public function post($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
 
     /**
      * Attach route to collector with `DELETE` method.
@@ -66,10 +54,7 @@ trait HttpRouteHelperTrait
      * 
      * @return RouteInterface
      */
-    public function delete($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
-    {
-        return $this->add('DELETE', $pattern, $handler, $middlewares, $name);
-    }
+    public function delete($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
 
     /**
      * Attach route to collector with `PUT` method.
@@ -81,10 +66,7 @@ trait HttpRouteHelperTrait
      * 
      * @return RouteInterface
      */
-    public function put($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
-    {
-        return $this->add('PUT', $pattern, $handler, $middlewares, $name);
-    }
+    public function put($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
 
     /**
      * Attach route to collector with `OPTIONS` method.
@@ -96,21 +78,5 @@ trait HttpRouteHelperTrait
      * 
      * @return RouteInterface
      */
-    public function options($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
-    {
-        return $this->add('OPTIONS', $pattern, $handler, $middlewares, $name);
-    }
-
-    /**
-     * Attach data to collection.
-     *
-     * @param array|string $methods
-     * @param string $pattern
-     * @param \Closure|array|string $handler
-     * @param MiddlewareInterface[] $middlewares
-     * @param string|null $name
-     * 
-     * @return RouteInterface
-     */
-    abstract public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
+    public function options($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
 }

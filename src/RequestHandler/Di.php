@@ -18,8 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
-use Beige\Invoker\Interfaces\InvokerInterface;
-use Beige\Invoker\Invoker;
+use ConstanzeStandard\DI\Interfaces\ManagerInterface;
+use ConstanzeStandard\DI\Manager;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -30,14 +30,14 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class DiHandler implements RequestHandlerInterface
+class Di implements RequestHandlerInterface
 {
     const DEFAULT_HANDLER_METHOD = '__invoke';
 
     /**
      * The single callable handler.
      * 
-     * @var callable|array [className, methodName]
+     * @var callable|array|object [className, methodName]
      */
     private $handler;
 
@@ -56,16 +56,24 @@ class DiHandler implements RequestHandlerInterface
     private $container;
 
     /**
+     * The DI manager.
+     * 
+     * @var ManagerInterface
+     */
+    private $manager;
+
+    /**
      * Get the `Di` handler definition.
      * 
      * @param ContainerInterface|null $container
+     * @param ManagerInterface|null $manager
      * 
      * @return \Closure
      */
-    public static function getDefinition(ContainerInterface $container)
+    public static function getDefinition(ContainerInterface $container, ManagerInterface $manager = null)
     {
-        return function($handler, array $arguments) use ($container) {
-            return new static($container, $handler, $arguments);
+        return function($handler, array $arguments) use ($container, $manager) {
+            return new static($container, $handler, $arguments, $manager);
         };
     }
 
@@ -74,11 +82,12 @@ class DiHandler implements RequestHandlerInterface
      * @param callable $handler
      * @param array $arguments
      */
-    public function __construct(ContainerInterface $container, $handler, array $arguments = [])
+    public function __construct(ContainerInterface $container, $handler, array $arguments = [], ManagerInterface $manager = null)
     {
         $this->handler = $handler;
         $this->arguments = $arguments;
         $this->container = $container;
+        $this->manager = $manager ?? new Manager($container);
     }
 
     /**
@@ -86,7 +95,7 @@ class DiHandler implements RequestHandlerInterface
      *
      * Call the single handler to generate the response.
      * 
-     * @param callable|array $handler
+     * @param callable|array|object $handler
      * @param array $arguments
      * 
      * @throws \InvalidArgumentException
@@ -95,21 +104,22 @@ class DiHandler implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $invoker = $this->container->has(InvokerInterface::class) ?
-            $this->container->get(InvokerInterface::class) :
-            new Invoker($this->container);
-
         if (is_callable($this->handler)) {
-            return $invoker->call($this->handler, $this->arguments);
+            if (! is_string($this->handler)) {
+                $this->manager->resolvePropertyAnnotation(
+                    is_array($this->handler) ? $this->handler[0] : $this->handler
+                );
+            }
+            return $this->manager->call($this->handler, $this->arguments);
         }
 
         if (is_string($this->handler)) {
             $targetInfo = explode('@', $this->handler);
-            return $invoker->callMethod(
-                $invoker->new($targetInfo[0]),
-                $targetInfo[1] ?? static::DEFAULT_HANDLER_METHOD,
-                $this->arguments
-            );
+            $instance = $this->manager->instance($targetInfo[0]);
+            $this->manager->resolvePropertyAnnotation($instance);
+            $method = $targetInfo[1] ?? static::DEFAULT_HANDLER_METHOD;
+
+            return $this->manager->call([$instance, $method], $this->arguments);
         }
 
         throw new \InvalidArgumentException('The handler must be string or callable.');
