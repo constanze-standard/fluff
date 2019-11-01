@@ -50,7 +50,7 @@ class Args implements RequestHandlerInterface
      */
     public static function getDefinition()
     {
-        return function($handler, array $arguments) {
+        return function(callable $handler, array $arguments) {
             return new static($handler, $arguments);
         };
     }

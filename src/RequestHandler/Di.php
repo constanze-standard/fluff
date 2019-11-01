@@ -37,7 +37,7 @@ class Di implements RequestHandlerInterface
     /**
      * The single callable handler.
      * 
-     * @var callable|array|object [className, methodName]
+     * @var callable
      */
     private $handler;
 
@@ -72,7 +72,7 @@ class Di implements RequestHandlerInterface
      */
     public static function getDefinition(ContainerInterface $container, ManagerInterface $manager = null)
     {
-        return function($handler, array $arguments) use ($container, $manager) {
+        return function(callable $handler, array $arguments) use ($container, $manager) {
             return new static($container, $handler, $arguments, $manager);
         };
     }
@@ -81,8 +81,9 @@ class Di implements RequestHandlerInterface
      * @param ContainerInterface $container
      * @param callable $handler
      * @param array $arguments
+     * @param ManagerInterface|null $manager
      */
-    public function __construct(ContainerInterface $container, $handler, array $arguments = [], ManagerInterface $manager = null)
+    public function __construct(ContainerInterface $container, callable $handler, array $arguments = [], ManagerInterface $manager = null)
     {
         $this->handler = $handler;
         $this->arguments = $arguments;
@@ -104,24 +105,6 @@ class Di implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        if (is_callable($this->handler)) {
-            if (! is_string($this->handler)) {
-                $this->manager->resolvePropertyAnnotation(
-                    is_array($this->handler) ? $this->handler[0] : $this->handler
-                );
-            }
-            return $this->manager->call($this->handler, $this->arguments);
-        }
-
-        if (is_string($this->handler)) {
-            $targetInfo = explode('@', $this->handler);
-            $instance = $this->manager->instance($targetInfo[0]);
-            $this->manager->resolvePropertyAnnotation($instance);
-            $method = $targetInfo[1] ?? static::DEFAULT_HANDLER_METHOD;
-
-            return $this->manager->call([$instance, $method], $this->arguments);
-        }
-
-        throw new \InvalidArgumentException('The handler must be string or callable.');
+        return $this->manager->call($this->handler, $this->arguments);
     }
 }

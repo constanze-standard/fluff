@@ -50,7 +50,7 @@ class Dispatcher implements RequestHandlerInterface
 
     /**
      * @param string $attributeName Default is `route`.
-     * TODO: 这里可以应该从外部传入一个 RouterInterface 实例，代理全部的路由操作，将路由最大限度的与 Dispatcher 分离
+     * @param RouterInterface|null $router
      */
     public function __construct(callable $definition, RouterInterface $router = null)
     {
@@ -84,8 +84,7 @@ class Dispatcher implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $result = $this->getRouter()->matchOrFail($request);
-        [$options, $routeHandler, $arguments] = $result;
+        [$options, $routeHandler, $arguments] = $this->router->matchOrFail($request);
         $middlewares = $options['middlewares'] ?? [];
         $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
         return $this->handleWithMiddlewares($middlewares, $request, $childHandler);

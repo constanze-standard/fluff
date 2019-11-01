@@ -60,6 +60,13 @@ class Delay implements RequestHandlerInterface
     private $definition;
 
     /**
+     * The init strategy.
+     * 
+     * @var callable
+     */
+    private $strategy;
+
+    /**
      * Get the `Delay` handler definition.
      * 
      * @param callable $definition
@@ -67,10 +74,10 @@ class Delay implements RequestHandlerInterface
      * 
      * @return \Closure
      */
-    public static function getDefinition(callable $definition, ...$initialArguments)
+    public static function getDefinition(callable $strategy, callable $definition)
     {
-        return function($handler, array $arguments) use ($definition, $initialArguments) {
-            return new static($definition, $handler, $arguments, ...$initialArguments);
+        return function($handler, array $arguments) use ($strategy, $definition) {
+            return new static($strategy, $definition, $handler, $arguments);
         };
     }
 
@@ -78,11 +85,11 @@ class Delay implements RequestHandlerInterface
      * Parse handler with initial arguments.
      * 
      * @param callable|string $handler
-     * @param array $initialArguments
+     * @param callable $strategy
      * 
      * @return callable
      */
-    private static function handlerToCallable($handler, array $initialArguments)
+    private static function handlerToCallable($handler, callable $strategy)
     {
         if (is_callable($handler)) {
             return $handler;
@@ -90,26 +97,27 @@ class Delay implements RequestHandlerInterface
 
         if (is_string($handler)) {
             $callback = explode('@', $handler);
-            return [
-                new $callback[0](...$initialArguments),
+            return $strategy(
+                $callback[0],
                 $callback[1] ?? static::DEFAULT_HANDLER_METHOD
-            ];
+            );
         }
 
         throw new \InvalidArgumentException('Route handler must be string or callable.');
     }
 
     /**
+     * @param callable $strategy
      * @param callable $definition
      * @param callable|string $handler Callable object or class name.
      * @param array $arguments
      */
-    public function __construct(callable $definition, $handler, array $arguments = [], ...$initialArguments)
+    public function __construct(callable $strategy, callable $definition, $handler, array $arguments = [])
     {
+        $this->strategy = $strategy;
         $this->definition = $definition;
         $this->handler = $handler;
         $this->arguments = $arguments;
-        $this->initialArguments = $initialArguments;
     }
 
     /**
@@ -124,7 +132,7 @@ class Delay implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $handler = static::handlerToCallable($this->handler, $this->initialArguments);
+        $handler = static::handlerToCallable($this->handler, $this->strategy);
         return call_user_func($this->definition, $handler, $this->arguments)->handle($request);
     }
 }

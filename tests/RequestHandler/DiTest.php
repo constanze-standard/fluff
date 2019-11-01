@@ -39,50 +39,11 @@ class DiTest extends AbstractTest
         $this->assertEquals($response, $result);
     }
 
-    public function testHandlerIsString()
-    {
-        $container = new Container();
-        $handler = new Di($container, 'StringTest@index');
-
-        /** @var ServerRequestInterface $request */
-        $request = $this->createMock(ServerRequestInterface::class);
-        $result = $handler->handle($request);
-        $this->assertInstanceOf(Response::class, $result);
-    }
-
-    public function testHandlerIsInvoke()
-    {
-        $container = new Container();
-        $handler = new Di($container, 'StringTest');
-
-        /** @var ServerRequestInterface $request */
-        $request = $this->createMock(ServerRequestInterface::class);
-        $result = $handler->handle($request);
-        $this->assertInstanceOf(Response::class, $result);
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testHandlerInvalidArgumentException()
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
-        $handler = new Di($container, []);
-
-        /** @var ServerRequestInterface $request */
-        $request = $this->createMock(ServerRequestInterface::class);
-        $handler->handle($request);
-    }
-
     public function testGetDefinition_static()
     {
         $container = new Container();
         $closure = Di::getDefinition($container);
-        $result = $closure('StringTest', []);
+        $result = $closure(new StringTest, []);
         $this->assertInstanceOf(Di::class, $result);
     }
 }

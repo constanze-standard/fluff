@@ -6,16 +6,12 @@ use ConstanzeStandard\Fluff\RequestHandler\Delay;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
 class StringTest2
 {
-    public function __construct(Container $c)
-    {
-        $this->c = $c;
-    }
-
     public function index()
     {
         return new Response();
@@ -29,73 +25,86 @@ class StringTest2
 
 class DelayTest extends AbstractTest
 {
-    public function testHandlerIsCallable()
+    public function testGetDefinition()
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $func = function() use ($response) {
-            return $response;
+        $rh = $this->createMock(RequestHandlerInterface::class);
+        $strategy = function($className, $method) {
+            return [new $className, $method];
         };
-        $container = new Container();
-        $handler = new Delay(Args::getDefinition(), $func, [], $container);
+        $definition = function($handler, array $arguments) use ($rh) {
+            return $rh;
+        };
+        $handler = function() {
 
-        /** @var ServerRequestInterface $request */
-        $request = $this->createMock(ServerRequestInterface::class);
-        $result = $handler->handle($request);
-        $this->assertEquals($response, $result);
+        };
+        $def = Delay::getDefinition($strategy, $definition);
+        $result = $def($handler, []);
+        $this->assertInstanceOf(Delay::class, $result);
     }
 
-    public function testHandlerIsString()
+    public function testHandleWithCallable()
     {
         $response = $this->createMock(ResponseInterface::class);
-        $container = new Container();
-        $func = function() use ($response) {
+        $request = $this->createMock(ServerRequestInterface::class);
+
+        $strategy = function($className, $method) {
+            return [new $className, $method];
+        };
+        $rh = $this->createMock(RequestHandlerInterface::class);
+        $rh->expects($this->once())->method('handle')->with($request)->willReturn($response);
+        $definition = function($handler, $arguments) use ($rh) {
+            return $rh;
+        };
+        $handler = function() use ($response) {
             return $response;
         };
-        $handler = new Delay(Args::getDefinition(), 'StringTest2@index', [], $container);
-
-        /** @var ServerRequestInterface $request */
-        $request = $this->createMock(ServerRequestInterface::class);
-        $result = $handler->handle($request);
-        $this->assertInstanceOf(Response::class, $result);
+        $delay = new Delay($strategy, $definition, $handler);
+        $result = $delay->handle($request);
+        $this->assertEquals($result, $response);
     }
 
-    public function testHandlerIsInvoke()
+    public function testHandleWithString()
     {
         $response = $this->createMock(ResponseInterface::class);
-        $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
-        $handler = new Delay(Args::getDefinition(), 'StringTest2', [], $container);
-
-        /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
-        $result = $handler->handle($request);
-        $this->assertInstanceOf(Response::class, $result);
+
+        $strategy = function($className, $method) {
+            $instance = new $className;
+            $this->assertInstanceOf(StringTest2::class, $instance);
+            $this->assertEquals($method, 'index');
+            return [$instance, $method];
+        };
+        $rh = $this->createMock(RequestHandlerInterface::class);
+        $rh->expects($this->once())->method('handle')->with($request)->willReturn($response);
+        $definition = function($handler, $arguments) use ($rh) {
+            return $rh;
+        };
+        $handler = 'StringTest2@index';
+        $delay = new Delay($strategy, $definition, $handler);
+        $result = $delay->handle($request);
+        $this->assertEquals($result, $response);
     }
 
     /**
      * @expectedException \InvalidArgumentException
      */
-    public function testHandlerInvalidArgumentException()
+    public function testHandleWithInvalidArgumentException()
     {
         $response = $this->createMock(ResponseInterface::class);
-        $container = new Container();
-        $func = function() use ($response) {
-            return $response;
-        };
-        $handler = new Delay(Args::getDefinition(), [], [], $container);
-
-        /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
-        $handler->handle($request);
-    }
 
-    public function testGetDefinition_static()
-    {
-        $container = new Container();
-        $closure = Delay::getDefinition(Args::getDefinition());
-        $result = $closure('StringTest2', [], $container);
-        $this->assertInstanceOf(Delay::class, $result);
+        $strategy = function($className, $method) {
+            $instance = new $className;
+            $this->assertInstanceOf(StringTest2::class, $instance);
+            $this->assertEquals($method, 'index');
+            return [$instance, $method];
+        };
+        $rh = $this->createMock(RequestHandlerInterface::class);
+        $definition = function($handler, $arguments) use ($rh) {
+            return $rh;
+        };
+        $handler = [1,2];
+        $delay = new Delay($strategy, $definition, $handler);
+        $result = $delay->handle($request);
     }
 }
