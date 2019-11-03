@@ -36,4 +36,4 @@ $app = new Application($core);
 ```
 
 ## 学习 Fluff
-如上例所示，Fluff 的核心是可替换的，选用不同的核心将会启用不同的特性。了解更多使用方式，请访问我们的 [Fluff 官方网站](http://www.fluff-framework.cn/)。
+如上例所示，Fluff 的核心是可替换的，选用不同的核心将会启用不同的特性。了解更多使用方式，请访问我们的 [Fluff 官方网站](https://www.fluff-framework.cn/)。
