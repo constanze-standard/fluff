@@ -1,6 +1,6 @@
 # Fluff Micro Framework
 
-[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/request-handler/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/fluff/blob/master/LICENSE)
 
 web 开发又一次变得有趣起来了！
 
@@ -10,34 +10,29 @@ web 开发又一次变得有趣起来了！
 
 ## 安装
 ```bash
-composer require constanze-standard/fluff "^1.0"
+composer require constanze-standard/fluff:^1.0
 ```
 
 ## 示例
 需要安装组件 [`nyholm/psr7`](https://github.com/Nyholm/psr7)
 ```php
 use ConstanzeStandard\Fluff\Application;
-use ConstanzeStandard\Fluff\Middleware\EndOutputBuffer;
-use ConstanzeStandard\Fluff\Middleware\RouterMiddleware;
+use ConstanzeStandard\Fluff\RequestHandler\Args;
+use ConstanzeStandard\Fluff\RequestHandler\Delay;
 use ConstanzeStandard\Fluff\RequestHandler\Dispatcher;
-use ConstanzeStandard\Fluff\RequestHandler\Handler;
-use Nyholm\Psr7\Response;
-use Nyholm\Psr7\ServerRequest;
-use Psr\Http\Message\ServerRequestInterface;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$dispatcher = new Dispatcher(Handler::getDefinition());
-$app = new Application($dispatcher);
-
-$router = $app->addMiddleware(new RouterMiddleware());
-
-$router->get('/love/{name}', function(ServerRequestInterface $request, $args) {
-    return new Response(200, [], "I ♥ {$args['name']}!");
-});
-
-$app->addMiddleware(new EndOutputBuffer());
-$app->handle(new ServerRequest('GET', '/love/Fluff'));
+// 调用策略 ↓
+$definition = Args::getDefinition();
+// 延迟策略 ↓
+$definition = Delay::getDefinition(function($className, $method) {
+    return [new $className, $method];
+}, $definition);
+// 路由派发策略
+$core = new Dispatcher($definition);
+// 创建应用
+$app = new Application($core);
 ```
 
 ## 学习 Fluff
