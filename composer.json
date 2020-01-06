@@ -12,7 +12,7 @@
         "php-http/message": "^1.7",
         "constanze-standard/di": "^1.1",
         "constanze-standard/http-server-router": "^1.0",
-        "constanze-standard/routing": "^1.0",
+        "constanze-standard/routing": "^1.1",
         "constanze-standard/request-handler": "^1.0"
     },
     "require-dev": {
