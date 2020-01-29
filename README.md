@@ -1,8 +1,8 @@
-# Fluff Micro Framework
+> web 开发又一次变得有趣起来了！
 
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/fluff/blob/master/LICENSE)
 
-web 开发又一次变得有趣起来了！
+# Fluff Micro Framework
 
 ## Fluff 是什么？
 - Fluff 是一个多核心的 PHP [微框架](https://en.wikipedia.org/wiki/Microframework)，它为应用程序的构建提供多种形式的解决方案。
