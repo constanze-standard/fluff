@@ -21,6 +21,7 @@ namespace ConstanzeStandard\Fluff\RequestHandler;
 use ConstanzeStandard\Fluff\Routing\Router;
 use ConstanzeStandard\Fluff\Interfaces\RouterInterface;
 use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;
+use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -30,7 +31,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class Dispatcher implements RequestHandlerInterface
+class Dispatcher extends Router implements RequestHandlerInterface, RouterInterface
 {
     use MiddlewareHandlerTrait;
 
@@ -42,30 +43,13 @@ class Dispatcher implements RequestHandlerInterface
     private $definition;
 
     /**
-     * The router.
-     * 
-     * @var RouterInterface
-     */
-    private RouterInterface $router;
-
-    /**
      * @param callable $definition
-     * @param RouterInterface|null $router
+     * @param RouteCollectionInterface|null $routeCollection
      */
-    public function __construct(callable $definition, RouterInterface $router = null)
+    public function __construct(callable $definition, ?RouteCollectionInterface $routeCollection = null)
     {
-        $this->router = $router ?? new Router();
         $this->definition = $definition;
-    }
-
-    /**
-     * Get the router.
-     * 
-     * @return RouterInterface
-     */
-    public function getRouter(): RouterInterface
-    {
-        return $this->router;
+        parent::__construct($routeCollection);
     }
 
     /**
@@ -75,8 +59,6 @@ class Dispatcher implements RequestHandlerInterface
      * 
      * @param ServerRequestInterface $request
      * 
-     * @throws \RuntimeException
-     * 
      * @return ResponseInterface
      * 
      * @throws HttpMethodNotAllowedException
@@ -84,7 +66,7 @@ class Dispatcher implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        [$options, $routeHandler, $arguments] = $this->router->matchOrFail($request);
+        [$options, $routeHandler, $arguments] = $this->matchOrFail($request);
         $middlewares = $options['middlewares'] ?? [];
         $childHandler = call_user_func($this->definition, $routeHandler, $arguments);
         return $this->handleWithMiddlewares($middlewares, $request, $childHandler);

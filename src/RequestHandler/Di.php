@@ -30,7 +30,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 
  * @author Alex <blldxt@gmail.com>
  */
-class Di implements RequestHandlerInterface
+class Di extends Manager implements RequestHandlerInterface, ManagerInterface
 {
     const DEFAULT_HANDLER_METHOD = '__invoke';
 
@@ -49,13 +49,6 @@ class Di implements RequestHandlerInterface
     private array $arguments;
 
     /**
-     * The DI manager.
-     * 
-     * @var ManagerInterface
-     */
-    private ManagerInterface $manager;
-
-    /**
      * Get the `Di` handler definition.
      * 
      * @param ContainerInterface|null $container
@@ -63,10 +56,10 @@ class Di implements RequestHandlerInterface
      * 
      * @return \Closure
      */
-    public static function getDefinition(ContainerInterface $container, ManagerInterface $manager = null)
+    public static function getDefinition(ContainerInterface $container)
     {
-        return function(callable $handler, array $arguments) use ($container, $manager) {
-            return new static($container, $handler, $arguments, $manager);
+        return function(callable $handler, array $arguments) use ($container) {
+            return new static($container, $handler, $arguments);
         };
     }
 
@@ -74,13 +67,12 @@ class Di implements RequestHandlerInterface
      * @param ContainerInterface $container
      * @param callable $handler
      * @param array $arguments
-     * @param ManagerInterface|null $manager
      */
-    public function __construct(ContainerInterface $container, callable $handler, array $arguments = [], ManagerInterface $manager = null)
+    public function __construct(ContainerInterface $container, callable $handler, array $arguments = [])
     {
         $this->handler = $handler;
         $this->arguments = $arguments;
-        $this->manager = $manager ?? new Manager($container);
+        parent::__construct($container);
     }
 
     /**
@@ -88,15 +80,12 @@ class Di implements RequestHandlerInterface
      *
      * Call the single handler to generate the response.
      * 
-     * @param callable|array|object $handler
-     * @param array $arguments
+     * @param ServerRequestInterface $request
      * 
-     * @throws \InvalidArgumentException
-     * 
-     * @return RequestHandlerInterface
+     * @return ResponseInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        return $this->manager->call($this->handler, $this->arguments);
+        return $this->call($this->handler, $this->arguments);
     }
 }
