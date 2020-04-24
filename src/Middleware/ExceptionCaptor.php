@@ -35,7 +35,7 @@ class ExceptionCaptor implements MiddlewareInterface
      * 
      * @var callable[]
      */
-    private $exceptionHandlers = [];
+    private array $exceptionHandlers = [];
 
     /**
      * Process an incoming server request.

@@ -35,7 +35,7 @@ class RouteService implements RouteServiceInterface
      * 
      * @var RouteInterface[]
      */
-    private $routes;
+    private array $routes;
 
     /**
      * Collection convert to routes.

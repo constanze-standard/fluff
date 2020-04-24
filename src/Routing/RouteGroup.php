@@ -37,21 +37,21 @@ class RouteGroup implements RouteGroupInterface
      * 
      * @var string
      */
-    private $prefix;
+    private string $prefix;
 
     /**
      * Middlewares of current group.
      * 
      * @var MiddlewareInterface[]
      */
-    private $middlewares = [];
+    private array $middlewares = [];
 
     /**
      * Routes of currnt group.
      * 
      * @var Route[]
      */
-    private $routes = [];
+    private array $routes = [];
 
     /**
      * @param string $prefix

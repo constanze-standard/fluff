@@ -44,33 +44,33 @@ class Router extends RouteGroupProxy implements RouterInterface
      * 
      * @var RouteCollectionInterface
      */
-    private $collection;
+    private RouteCollectionInterface $collection;
 
     /**
      * The route service for collection.
      * 
      * @var RouteServiceInterface
      */
-    private $routeService;
+    private RouteServiceInterface $routeService;
 
     /**
      * Group handlers.
      * 
      * @var SplObjectStorage
      */
-    private $groupHandlers;
+    private SplObjectStorage $groupHandlers;
 
     /**
      * Global middlewares.
      * 
      * @var RouteGroupInterface[]
      */
-    private $routeGroups = [];
+    private array $routeGroups = [];
 
     /**
      * @param RouteCollectionInterface $routeCollection
      */
-    public function __construct(RouteCollectionInterface $routeCollection = null)
+    public function __construct(?RouteCollectionInterface $routeCollection = null)
     {
         parent::__construct(new RouteGroup());
         $this->collection = $routeCollection ?? new RouteCollection();

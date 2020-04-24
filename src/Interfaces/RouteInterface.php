@@ -39,6 +39,13 @@ interface RouteInterface
     public function getMiddlewares(): array;
 
     /**
+     * Get route name.
+     * 
+     * @return string
+     */
+    public function getName(): ?string;
+
+    /**
      * Set route name.
      * 
      * @param string $name

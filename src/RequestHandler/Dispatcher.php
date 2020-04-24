@@ -46,10 +46,10 @@ class Dispatcher implements RequestHandlerInterface
      * 
      * @var RouterInterface
      */
-    private $router;
+    private RouterInterface $router;
 
     /**
-     * @param string $attributeName Default is `route`.
+     * @param callable $definition
      * @param RouterInterface|null $router
      */
     public function __construct(callable $definition, RouterInterface $router = null)

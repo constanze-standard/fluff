@@ -35,7 +35,7 @@ class EndOutputBuffer implements MiddlewareInterface
      * 
      * @var int
      */
-    private $chunkSize;
+    private int $chunkSize;
 
     /**
      * Flush or clean output buffers.

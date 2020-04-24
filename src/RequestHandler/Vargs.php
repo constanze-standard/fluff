@@ -34,10 +34,9 @@ class Vargs extends Args
      *
      * Call the single handler to generate the response.
      * 
-     * @param callable|array $handler
-     * @param array $params
+     * @param ServerRequestInterface $request
      * 
-     * @return RequestHandlerInterface
+     * @return ResponseInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

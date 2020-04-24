@@ -40,7 +40,7 @@ class Route implements RouteInterface
      * 
      * @var string
      */
-    private $pattern;
+    private string $pattern;
 
     /**
      * Callable message.
@@ -54,14 +54,14 @@ class Route implements RouteInterface
      * 
      * @var MiddlewareInterface[]
      */
-    private $middlewares = [];
+    private array $middlewares = [];
 
     /**
      * The route name.
      * 
      * @var string|null
      */
-    private $name;
+    private ?string $name;
 
     /**
      * @param array|string $methods
@@ -70,7 +70,7 @@ class Route implements RouteInterface
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      */
-    public function __construct($methods, string $pattern, $handler, array $middlewares = [], string $name = null)
+    public function __construct($methods, string $pattern, $handler, array $middlewares = [], ?string $name = null)
     {
         $this->httpMethods = $methods;
         $this->pattern = $pattern;
@@ -123,7 +123,7 @@ class Route implements RouteInterface
      * 
      * @return string|null
      */
-    public function getName()
+    public function getName(): ?string
     {
         return $this->name;
     }

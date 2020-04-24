@@ -38,7 +38,7 @@ class Application implements MiddlewareDispatcherInterface
      * 
      * @var MiddlewareDispatcherInterface
      */
-    private $middlewareDispatcher;
+    private MiddlewareDispatcherInterface $middlewareDispatcher;
 
     /**
      * Application constructor.

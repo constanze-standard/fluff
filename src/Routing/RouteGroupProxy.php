@@ -29,7 +29,7 @@ class RouteGroupProxy
      * 
      * @var RouteGroupInterface
      */
-    protected $routeGroup;
+    protected RouteGroupInterface $routeGroup;
 
     /**
      * @param RouteGroupInterface $routeGroup

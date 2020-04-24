@@ -46,21 +46,14 @@ class Di implements RequestHandlerInterface
      * 
      * @var array
      */
-    private $arguments;
-
-    /**
-     * The PSR-11 container.
-     * 
-     * @var ContainerInterface
-     */
-    private $container;
+    private array $arguments;
 
     /**
      * The DI manager.
      * 
      * @var ManagerInterface
      */
-    private $manager;
+    private ManagerInterface $manager;
 
     /**
      * Get the `Di` handler definition.
@@ -87,7 +80,6 @@ class Di implements RequestHandlerInterface
     {
         $this->handler = $handler;
         $this->arguments = $arguments;
-        $this->container = $container;
         $this->manager = $manager ?? new Manager($container);
     }
 

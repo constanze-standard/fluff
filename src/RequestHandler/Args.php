@@ -41,7 +41,7 @@ class Args implements RequestHandlerInterface
      * 
      * @var array
      */
-    protected $arguments;
+    protected array $arguments;
 
     /**
      * Get the `Basic` handler definition.

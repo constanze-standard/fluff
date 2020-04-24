@@ -43,14 +43,7 @@ class Delay implements RequestHandlerInterface
      * 
      * @var array
      */
-    private $arguments;
-
-    /**
-     * The initial arguments for handler.
-     * 
-     * @var array
-     */
-    private $initialArguments;
+    private array $arguments;
 
     /**
      * The unit handler definition.
@@ -69,8 +62,8 @@ class Delay implements RequestHandlerInterface
     /**
      * Get the `Delay` handler definition.
      * 
+     * @param callable $strategy
      * @param callable $definition
-     * @param mixed[] $initialArguments
      * 
      * @return \Closure
      */
