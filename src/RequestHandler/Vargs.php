@@ -20,7 +20,6 @@ namespace ConstanzeStandard\Fluff\RequestHandler;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * The router request handler.

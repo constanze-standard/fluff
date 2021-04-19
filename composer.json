@@ -9,17 +9,17 @@
     "require": {
         "php": ">=7.4",
         "psr/http-server-middleware": "^1.0",
-        "php-http/message": "^1.7",
+        "php-http/message": "^1.10",
         "constanze-standard/di": "^1.1",
         "constanze-standard/http-server-router": "^1.0",
         "constanze-standard/routing": "^1.1",
         "constanze-standard/request-handler": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^7.5",
+        "phpunit/phpunit": "^9.5",
         "constanze-standard/container": "^1.0",
-        "nyholm/psr7-server": "^0.3.0",
-        "nyholm/psr7": "^1.2",
+        "nyholm/psr7-server": "^1.0",
+        "nyholm/psr7": "^1.4",
         "constanze-standard/event-dispatcher": "^1.0"
     },
     "autoload": {

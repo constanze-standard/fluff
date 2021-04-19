@@ -39,13 +39,15 @@ class EndOutputBuffer implements MiddlewareInterface
 
     /**
      * Flush or clean output buffers.
-     * 
+     *
+     * @param int $targetLevel
      * @param bool $isFlush
      */
-    private static function closeOutputBuffers(int $targetLevel, $isFlush = true)
+    private static function closeOutputBuffers(int $targetLevel, bool $isFlush = true): void
     {
         if ($isFlush && \function_exists('fastcgi_finish_request')) {
-            return fastcgi_finish_request();
+            fastcgi_finish_request();
+            return;
         }
         $status = ob_get_status(true);
         $level = \count($status);
@@ -53,7 +55,7 @@ class EndOutputBuffer implements MiddlewareInterface
         while ($level > $targetLevel) {
             $level--;
             $s = $status[$level];
-            if ((isset($s['del']) ? $s['del'] : !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
+            if (($s['del'] ?? !isset($s['flags']) || ($s['flags'] & $flags) === $flags)) {
                 if ($isFlush) {
                     ob_end_flush();
                 } else {
@@ -65,7 +67,6 @@ class EndOutputBuffer implements MiddlewareInterface
 
     /**
      * @param int $chunkSize
-     * @param bool $flush
      */
     public function __construct(int $chunkSize = 4096)
     {
@@ -146,7 +147,7 @@ class EndOutputBuffer implements MiddlewareInterface
             foreach ($response->getHeaders() as $key => $headers) {
                 $replace = 0 === strcasecmp($key, 'content-type');
                 foreach ($headers as $header) {
-                    header("{$key}: {$header}", $replace);
+                    header("$key: $header", $replace);
                 }
             }
         }

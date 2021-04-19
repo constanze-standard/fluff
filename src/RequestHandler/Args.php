@@ -48,7 +48,7 @@ class Args implements RequestHandlerInterface
      * 
      * @return \Closure
      */
-    public static function getDefinition()
+    public static function getDefinition(): \Closure
     {
         return function(callable $handler, array $arguments) {
             return new static($handler, $arguments);
@@ -69,11 +69,9 @@ class Args implements RequestHandlerInterface
      * Handles a request and produces a response.
      *
      * Call the single handler to generate the response.
-     * 
-     * @param callable|array $handler
-     * @param array $params
-     * 
-     * @return RequestHandlerInterface
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @return \Psr\Http\Message\ResponseInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

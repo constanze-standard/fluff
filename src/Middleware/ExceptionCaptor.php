@@ -39,13 +39,14 @@ class ExceptionCaptor implements MiddlewareInterface
 
     /**
      * Process an incoming server request.
-     * 
+     *
      * Catch the exception and generate the error response.
-     * 
+     *
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler
-     * 
+     *
      * @return ResponseInterface
+     * @throws \Throwable
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -69,12 +70,12 @@ class ExceptionCaptor implements MiddlewareInterface
 
     /**
      * Process exception handler.
-     * 
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request
      * @param \Throwable $e
-     * 
-     * @throws \Throwable
-     * 
+     *
      * @return ResponseInterface
+     * @throws \Throwable
      */
     private function exceptionHandlerProcess(ServerRequestInterface $request, \Throwable $e): ResponseInterface
     {

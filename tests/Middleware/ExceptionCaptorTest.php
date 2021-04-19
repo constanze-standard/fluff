@@ -44,21 +44,18 @@ class ExceptionCaptorTest extends AbstractTest
     }
 
     /**
-     * @expectedException \Exception
+     * @throws \Throwable
      */
     public function testProcessError()
     {
+        $this->expectException(\Throwable::class);
         $middleware = new ExceptionCaptor();
+        $response = new Response(200, [], ' ');
         /** @var ServerRequestInterface $mockRequest */
         $mockRequest = $this->createMock(ServerRequestInterface::class);
-        /** @var RequestHandlerInterface $mockHandler */
+        /** @var \PHPUnit\Framework\MockObject\MockObject|RequestHandlerInterface $mockHandler */
         $mockHandler = $this->createMock(RequestHandlerInterface::class);
-        $response = new Response(200, [], ' ');
         $mockHandler->expects($this->once())->method('handle')->willThrowException(new \Exception());
-        $callback = function($request, $e) use ($response) {
-            return $response;
-        };
-
         $result = $middleware->process($mockRequest, $mockHandler);
     }
 

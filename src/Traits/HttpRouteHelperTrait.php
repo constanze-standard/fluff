@@ -18,6 +18,7 @@
 namespace ConstanzeStandard\Fluff\Traits;
 
 use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
+use Psr\Http\Server\MiddlewareInterface;
 
 /**
  * The router collection helper.
@@ -30,13 +31,13 @@ trait HttpRouteHelperTrait
      * Attach route to collector with `GET` method.
      * 
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param array $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function get($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function get(string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->add('GET', $pattern, $handler, $middlewares, $name);
     }
@@ -45,13 +46,13 @@ trait HttpRouteHelperTrait
      * Attach route to collector with `POST` method.
      * 
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param array $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function post($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function post(string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->add('POST', $pattern, $handler, $middlewares, $name);
     }
@@ -60,13 +61,13 @@ trait HttpRouteHelperTrait
      * Attach route to collector with `DELETE` method.
      * 
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param array $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function delete($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function delete(string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->add('DELETE', $pattern, $handler, $middlewares, $name);
     }
@@ -75,13 +76,13 @@ trait HttpRouteHelperTrait
      * Attach route to collector with `PUT` method.
      * 
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param array $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function put($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function put(string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->add('PUT', $pattern, $handler, $middlewares, $name);
     }
@@ -90,13 +91,13 @@ trait HttpRouteHelperTrait
      * Attach route to collector with `OPTIONS` method.
      * 
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param array $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function options($pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function options(string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->add('OPTIONS', $pattern, $handler, $middlewares, $name);
     }
@@ -106,11 +107,11 @@ trait HttpRouteHelperTrait
      *
      * @param array|string $methods
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    abstract public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
+    abstract public function add(array|string $methods, string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface;
 }

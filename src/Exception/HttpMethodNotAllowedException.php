@@ -8,6 +8,11 @@ use RuntimeException;
 class HttpMethodNotAllowedException extends RuntimeException implements MethodNotAllowedExceptionInterface
 {
     /**
+     * @var string[]
+     */
+    private array $allowedMethods;
+
+    /**
      * @param string $message
      * @param string[] $allowedMethods
      */

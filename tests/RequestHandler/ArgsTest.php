@@ -1,7 +1,6 @@
 <?php
 
 use ConstanzeStandard\Fluff\RequestHandler\Args;
-use ConstanzeStandard\Fluff\RequestHandler\Handler;
 use ConstanzeStandard\Fluff\RequestHandler\Vargs;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,7 +14,7 @@ class ArgsTest extends AbstractTest
         /** @var ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $response = new Response();
-        $func = function(ServerRequestInterface $request) use ($response) {
+        $func = function() use ($response) {
             return $response;
         };
         $handler = new Args($func);
@@ -29,8 +28,8 @@ class ArgsTest extends AbstractTest
         $request = $this->createMock(ServerRequestInterface::class);
         $response = new Response();
         $func = function(ServerRequestInterface $request, $a, $b) use ($response) {
-            $this->assertEquals($a, 1);
-            $this->assertEquals($b, 2);
+            $this->assertEquals(1, $a);
+            $this->assertEquals(2, $b);
             return $response;
         };
         $handler = new Vargs($func, [1, 2]);

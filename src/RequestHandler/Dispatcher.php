@@ -18,6 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\RequestHandler;
 
+use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
+use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
 use ConstanzeStandard\Fluff\Routing\Router;
 use ConstanzeStandard\Fluff\Interfaces\RouterInterface;
 use ConstanzeStandard\Fluff\Traits\MiddlewareHandlerTrait;

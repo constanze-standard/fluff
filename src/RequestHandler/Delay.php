@@ -67,7 +67,7 @@ class Delay implements RequestHandlerInterface
      * 
      * @return \Closure
      */
-    public static function getDefinition(callable $strategy, callable $definition)
+    public static function getDefinition(callable $strategy, callable $definition): \Closure
     {
         return function($handler, array $arguments) use ($strategy, $definition) {
             return new static($strategy, $definition, $handler, $arguments);
@@ -76,13 +76,13 @@ class Delay implements RequestHandlerInterface
 
     /**
      * Parse handler with initial arguments.
-     * 
-     * @param callable|string $handler
+     *
+     * @param callable|string|array $handler
      * @param callable $strategy
-     * 
-     * @return callable
+     *
+     * @return callable|string|array
      */
-    private static function handlerToCallable($handler, callable $strategy)
+    private static function handlerToCallable(callable|string|array $handler, callable $strategy): callable|string|array
     {
         if (is_callable($handler)) {
             return $handler;
@@ -102,10 +102,15 @@ class Delay implements RequestHandlerInterface
     /**
      * @param callable $strategy
      * @param callable $definition
-     * @param callable|string $handler Callable object or class name.
+     * @param callable|string|array $handler Callable object or class name.
      * @param array $arguments
      */
-    public function __construct(callable $strategy, callable $definition, $handler, array $arguments = [])
+    public function __construct(
+        callable $strategy,
+        callable $definition,
+        callable|string|array $handler,
+        array $arguments = []
+    )
     {
         $this->strategy = $strategy;
         $this->definition = $definition;
@@ -117,11 +122,9 @@ class Delay implements RequestHandlerInterface
      * Handles a request and produces a response.
      *
      * Call the single handler to generate the response.
-     * 
-     * @param callable|array $handler
-     * @param array $params
-     * 
-     * @return RequestHandlerInterface
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @return \Psr\Http\Message\ResponseInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

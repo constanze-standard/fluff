@@ -40,11 +40,9 @@ class RouteServiceTest extends AbstractTest
         $this->assertEquals($route, $route2);
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testGetRouteByNameWithException()
     {
+        $this->expectException(RuntimeException::class);
         /**
          * @var Route $route1
          * @var Route $route2
@@ -99,14 +97,10 @@ class RouteServiceTest extends AbstractTest
         $this->assertEquals($url, $_SERVER['SCRIPT_NAME'] . '/foo/bar?a=1');
     }
 
-    /**
-     * @expectedException \RuntimeException
-     */
     public function testGetUrlByRouteWithErrorType()
     {
-        /**
-         * @var Route $route2
-         */
+        $this->expectException(RuntimeException::class);
+        /** @var \PHPUnit\Framework\MockObject\MockObject|Route $route2 */
         $route2 = $this->createMock(Route::class);
         $route2->expects($this->once())->method('getPattern')->willReturn('/foo/{bar:\d+}');
         $routeService = new RouteService([$route2]);

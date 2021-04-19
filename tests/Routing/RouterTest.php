@@ -1,8 +1,9 @@
 <?php
 
+use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
+use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
 use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteServiceInterface;
-use ConstanzeStandard\Fluff\Routing\RouteGroup;
 use ConstanzeStandard\Fluff\Routing\Router;
 use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
 use Nyholm\Psr7\ServerRequest;
@@ -59,11 +60,9 @@ class RouterTest extends AbstractTest
         ]);
     }
 
-    /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException
-     */
     public function testMatchOrFailWithHttpMethodNotAllowedException()
     {
+        $this->expectException(HttpMethodNotAllowedException::class);
         /** @var ResponseInterface $response */
         $response = $this->createMock(ResponseInterface::class);
 
@@ -81,11 +80,9 @@ class RouterTest extends AbstractTest
         $router->matchOrFail($request);
     }
 
-    /**
-     * @expectedException \ConstanzeStandard\Fluff\Exception\HttpNotFoundException
-     */
     public function testMatchOrFailWithHttpNotFoundException()
     {
+        $this->expectException(HttpNotFoundException::class);
         /** @var ResponseInterface $response */
         $response = $this->createMock(ResponseInterface::class);
 

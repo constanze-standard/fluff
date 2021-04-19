@@ -39,12 +39,12 @@ class RouteService implements RouteServiceInterface
 
     /**
      * Collection convert to routes.
-     * 
+     *
      * @param RouteCollectionInterface $collection
-     * 
-     * @return RouteInterface[]
+     *
+     * @return static
      */
-    public static function fromRoutes(RouteCollectionInterface $collection): self
+    public static function fromRoutes(RouteCollectionInterface $collection): static
     {
         $routes = [];
         $contents = $collection->getContents();
@@ -131,12 +131,12 @@ class RouteService implements RouteServiceInterface
         $url = $route->getPattern();
 
         foreach ($arguments as $name => $argument) {
-            if (preg_match("/{{$name}:(?=.*)(.*)}/", $url, $matches)) {
-                if (!preg_match("/^{$matches[1]}$/", $argument)) {
+            if (preg_match(sprintf('/{%s:(?=.*)(.*)}/', $name), $url, $matches)) {
+                if (!preg_match(sprintf('/^%s$/', $matches[1]), $argument)) {
                     throw new RuntimeException('The URL argument ' . $name . ' format mismatch.');
                 }
             }
-            $url = preg_replace("/{{$name}(:.*)?}/", $argument, $url);
+            $url = preg_replace(sprintf('/{%s(:.*)?}/', $name), $argument, $url);
         }
 
         if ($queryParams) {

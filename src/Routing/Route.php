@@ -33,7 +33,7 @@ class Route implements RouteInterface
      * 
      * @var array|string
      */
-    private $httpMethods;
+    private string|array $httpMethods;
 
     /**
      * Url pattern.
@@ -47,7 +47,7 @@ class Route implements RouteInterface
      * 
      * @var mixed
      */
-    private $handler;
+    private mixed $handler;
 
     /**
      * Route middlewares.
@@ -70,7 +70,7 @@ class Route implements RouteInterface
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      */
-    public function __construct($methods, string $pattern, $handler, array $middlewares = [], ?string $name = null)
+    public function __construct(array|string $methods, string $pattern, mixed $handler, array $middlewares = [], ?string $name = null)
     {
         $this->httpMethods = $methods;
         $this->pattern = $pattern;
@@ -133,7 +133,7 @@ class Route implements RouteInterface
      * 
      * @return mixed
      */
-    public function getHandler()
+    public function getHandler(): mixed
     {
         return $this->handler;
     }
@@ -153,7 +153,7 @@ class Route implements RouteInterface
      * 
      * @return array|string
      */
-    public function getHttpMethods()
+    public function getHttpMethods(): array|string
     {
         return $this->httpMethods;
     }

@@ -47,7 +47,7 @@ class RouteGroup implements RouteGroupInterface
     private array $middlewares = [];
 
     /**
-     * Routes of currnt group.
+     * Routes of current group.
      * 
      * @var Route[]
      */
@@ -70,13 +70,13 @@ class RouteGroup implements RouteGroupInterface
      *
      * @param array|string $methods
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function add(array|string $methods, string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         $pattern = $this->prefix . $pattern;
         $middlewares = array_merge($this->middlewares, $middlewares);

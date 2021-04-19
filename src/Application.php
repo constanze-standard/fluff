@@ -20,7 +20,6 @@ namespace ConstanzeStandard\Fluff;
 
 use ConstanzeStandard\RequestHandler\Dispatcher as RequestDispatcher;
 use ConstanzeStandard\RequestHandler\Interfaces\MiddlewareDispatcherInterface;
-use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -34,7 +33,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 class Application implements MiddlewareDispatcherInterface
 {
     /**
-     * The request disptcher.
+     * The request dispatcher.
      * 
      * @var MiddlewareDispatcherInterface
      */
@@ -44,7 +43,7 @@ class Application implements MiddlewareDispatcherInterface
      * Application constructor.
      * set the custom container.
      *
-     * @param ContainerInterface $container
+     * @param \Psr\Http\Server\RequestHandlerInterface $requestHandler
      */
     public function __construct(RequestHandlerInterface $requestHandler)
     {

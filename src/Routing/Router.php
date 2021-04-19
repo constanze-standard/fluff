@@ -28,6 +28,7 @@ use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
 use ConstanzeStandard\Routing\Matcher;
 use ConstanzeStandard\Routing\RouteCollection;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use SplObjectStorage;
 
 /**
@@ -68,7 +69,7 @@ class Router extends RouteGroupProxy implements RouterInterface
     private array $routeGroups = [];
 
     /**
-     * @param RouteCollectionInterface $routeCollection
+     * @param \ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface|null $routeCollection
      */
     public function __construct(?RouteCollectionInterface $routeCollection = null)
     {
@@ -129,7 +130,7 @@ class Router extends RouteGroupProxy implements RouterInterface
     {
         $this->attachRouteCollection($this->getRootGroup(), $this->routeGroups);
         $result = (new Matcher($this->collection))->match(
-            $request->getMethod(), (string) $request->getUri()->getPath()
+            $request->getMethod(), $request->getUri()->getPath()
         );
 
         if (Matcher::STATUS_OK === $result[0]) {
@@ -162,8 +163,8 @@ class Router extends RouteGroupProxy implements RouterInterface
 
     /**
      * Add a route data to collection.
-     * 
-     * @param RouteGroupInterface $route
+     *
+     * @param \ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface $routeGroup
      */
     private function addRouteGroupToCollection(RouteGroupInterface $routeGroup)
     {

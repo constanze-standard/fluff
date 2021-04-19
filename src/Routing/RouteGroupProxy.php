@@ -68,13 +68,13 @@ class RouteGroupProxy
      *
      * @param array|string $methods
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
      * 
      * @return RouteInterface
      */
-    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface
+    public function add(array|string $methods, string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface
     {
         return $this->routeGroup->add($methods, $pattern, $handler, $middlewares, $name);
     }
@@ -97,9 +97,9 @@ class RouteGroupProxy
      * 
      * @param string $prefix
      * 
-     * @return self
+     * @return static
      */
-    public function setPrefix(string $prefix)
+    public function setPrefix(string $prefix): static
     {
         $this->routeGroup->setPrefix($prefix);
         return $this;

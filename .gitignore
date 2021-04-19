@@ -5,3 +5,4 @@ tests/codeCoverage
 /example
 .vscode
 .idea
+.phpunit.result.cache

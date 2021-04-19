@@ -18,6 +18,8 @@
 
 namespace ConstanzeStandard\Fluff\Interfaces;
 
+use ConstanzeStandard\Fluff\Exception\HttpMethodNotAllowedException;
+use ConstanzeStandard\Fluff\Exception\HttpNotFoundException;
 use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -65,32 +67,32 @@ interface RouterInterface extends RouteHelperInterface
      *
      * @param array|string $methods
      * @param string $pattern
-     * @param \Closure|array|string $handler
+     * @param array|string|\Closure $handler
      * @param MiddlewareInterface[] $middlewares
      * @param string|null $name
-     * 
+     *
      * @return RouteInterface
      */
-    public function add($methods, string $pattern, $handler, array $middlewares = [], string $name = null): RouteInterface;
+    public function add(array|string $methods, string $pattern, array|string|\Closure $handler, array $middlewares = [], string $name = null): RouteInterface;
 
     /**
      * Create a route group.
-     * 
+     *
      * @param string $prefix
      * @param MiddlewareInterface[] $middlewares
-     * 
+     *
      * @return RouteGroupInterface
      */
     public function deriveGroup(string $prefix = '', array $middlewares = []): RouteGroupInterface;
 
     /**
      * Set group prefix.
-     * 
+     *
      * @param string $prefix
-     * 
-     * @return self
+     *
+     * @return static
      */
-    public function setPrefix(string $prefix);
+    public function setPrefix(string $prefix): static;
 
     /**
      * Get the root route group.
