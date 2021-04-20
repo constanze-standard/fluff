@@ -22,6 +22,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
 /**
  * Catch the exception and generate the error response.
@@ -46,13 +47,13 @@ class ExceptionCaptor implements MiddlewareInterface
      * @param RequestHandlerInterface $handler
      *
      * @return ResponseInterface
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
             return $handler->handle($request);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->exceptionHandlerProcess($request, $e);
         }
     }
@@ -72,12 +73,12 @@ class ExceptionCaptor implements MiddlewareInterface
      * Process exception handler.
      *
      * @param ServerRequestInterface $request
-     * @param \Throwable $e
+     * @param Throwable $e
      *
      * @return ResponseInterface
-     * @throws \Throwable
+     * @throws Throwable
      */
-    private function exceptionHandlerProcess(ServerRequestInterface $request, \Throwable $e): ResponseInterface
+    private function exceptionHandlerProcess(ServerRequestInterface $request, Throwable $e): ResponseInterface
     {
         $response = null;
         $className = get_class($e);

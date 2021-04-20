@@ -12,6 +12,9 @@ require_once __DIR__ . '/../AbstractTest.php';
 
 class EndOutputBufferTest extends AbstractTest
 {
+    /**
+     * @throws ReflectionException
+     */
     public function testCloseOutputBuffersWithFlushable()
     {
         $endOutputBuffer = new EndOutputBuffer();
@@ -21,6 +24,9 @@ class EndOutputBufferTest extends AbstractTest
         ob_start();
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function testCloseOutputBuffersWithCleanable()
     {
         $endOutputBuffer = new EndOutputBuffer();
@@ -30,6 +36,9 @@ class EndOutputBufferTest extends AbstractTest
         ob_start();
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function testCloseOutputBuffersWithFastcgiFinishRequest()
     {
         $endOutputBuffer = new EndOutputBuffer();
