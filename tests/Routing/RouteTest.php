@@ -13,7 +13,7 @@ class RouteTest extends AbstractTest
         $result = $route->setName('root');
         $this->assertEquals($result, $route);
         $result = $route->getName();
-        $this->assertEquals($result, 'root');
+        $this->assertEquals('root', $result);
     }
 
     public function testGetMiddleware()
@@ -31,12 +31,12 @@ class RouteTest extends AbstractTest
     {
         $route = new Route('GET', '/', 'Target');
         $result = $route->getHandler();
-        $this->assertEquals($result, 'Target');
+        $this->assertEquals('Target', $result);
 
         $result = $route->getPattern();
-        $this->assertEquals($result, '/');
+        $this->assertEquals('/', $result);
 
         $result = $route->getHttpMethods();
-        $this->assertEquals($result, 'GET');
+        $this->assertEquals('GET', $result);
     }
 }

@@ -123,8 +123,8 @@ class Delay implements RequestHandlerInterface
      *
      * Call the single handler to generate the response.
      *
-     * @param \Psr\Http\Message\ServerRequestInterface $request
-     * @return \Psr\Http\Message\ResponseInterface
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

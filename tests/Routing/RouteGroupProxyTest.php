@@ -3,6 +3,7 @@
 use ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface;
 use ConstanzeStandard\Fluff\Interfaces\RouteInterface;
 use ConstanzeStandard\Fluff\Routing\RouteGroupProxy;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Server\MiddlewareInterface;
 
 require_once __DIR__ . '/../AbstractTest.php';
@@ -13,7 +14,7 @@ class RouteGroupProxyTest extends AbstractTest
     {
         /** @var MiddlewareInterface $middleware */
         $middleware = $this->createMock(MiddlewareInterface::class);
-        /** @var RouteGroupInterface $routeGroup */
+        /** @var MockObject|RouteGroupInterface $routeGroup */
         $routeGroup = $this->createMock(RouteGroupInterface::class);
         $routeGroup->expects($this->once())->method('addMiddleware')->with($middleware)->willReturn($middleware);
         $routeGroupProxy = new RouteGroupProxy($routeGroup);
@@ -25,7 +26,7 @@ class RouteGroupProxyTest extends AbstractTest
     {
         /** @var RouteInterface $route */
         $route = $this->createMock(RouteInterface::class);
-        /** @var RouteGroupInterface $routeGroup */
+        /** @var MockObject|RouteGroupInterface $routeGroup */
         $routeGroup = $this->createMock(RouteGroupInterface::class);
         $routeGroup->expects($this->once())->method('addRoute')->with($route)->willReturn($route);
         $routeGroupProxy = new RouteGroupProxy($routeGroup);
@@ -37,7 +38,7 @@ class RouteGroupProxyTest extends AbstractTest
     {
         /** @var RouteInterface $route */
         $route = $this->createMock(RouteInterface::class);
-        /** @var RouteGroupInterface $routeGroup */
+        /** @var MockObject|RouteGroupInterface $routeGroup */
         $routeGroup = $this->createMock(RouteGroupInterface::class);
         $routeGroup->expects($this->once())->method('add')->with('GET', '/foo', 'HANDLER', [], 'name')->willReturn($route);
         $routeGroupProxy = new RouteGroupProxy($routeGroup);
@@ -47,9 +48,7 @@ class RouteGroupProxyTest extends AbstractTest
 
     public function testDeriveGroup()
     {
-        /** @var RouteGroupInterface $routeGroup */
-        $routeGroup = $this->createMock(RouteGroupInterface::class);
-        /** @var RouteGroupInterface $routeGroup */
+        /** @var MockObject|RouteGroupInterface $routeGroup */
         $routeGroup = $this->createMock(RouteGroupInterface::class);
         $routeGroup->expects($this->once())->method('derive')->with('', [])->willReturn($routeGroup);
         $routeGroupProxy = new RouteGroupProxy($routeGroup);
@@ -59,7 +58,7 @@ class RouteGroupProxyTest extends AbstractTest
 
     public function testSetPrefix()
     {
-        /** @var RouteGroupInterface $routeGroup */
+        /** @var MockObject|RouteGroupInterface $routeGroup */
         $routeGroup = $this->createMock(RouteGroupInterface::class);
         $routeGroup->expects($this->once())->method('setPrefix')->with('');
         $routeGroupProxy = new RouteGroupProxy($routeGroup);

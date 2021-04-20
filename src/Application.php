@@ -43,7 +43,7 @@ class Application implements MiddlewareDispatcherInterface
      * Application constructor.
      * set the custom container.
      *
-     * @param \Psr\Http\Server\RequestHandlerInterface $requestHandler
+     * @param RequestHandlerInterface $requestHandler
      */
     public function __construct(RequestHandlerInterface $requestHandler)
     {

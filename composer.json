@@ -7,7 +7,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.0",
         "psr/http-server-middleware": "^1.0",
         "php-http/message": "^1.10",
         "constanze-standard/di": "^1.1",

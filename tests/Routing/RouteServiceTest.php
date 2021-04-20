@@ -2,6 +2,7 @@
 
 use ConstanzeStandard\Fluff\Routing\Route;
 use ConstanzeStandard\Fluff\Routing\RouteService;
+use PHPUnit\Framework\MockObject\MockObject;
 
 require_once __DIR__ . '/../AbstractTest.php';
 
@@ -60,9 +61,7 @@ class RouteServiceTest extends AbstractTest
 
     public function testGetUrlByRoute()
     {
-        /**
-         * @var Route $route2
-         */
+        /** @var MockObject|Route $route2 */
         $route2 = $this->createMock(Route::class);
         $route2->expects($this->once())->method('getPattern')->willReturn('/foo/{bar:\d+}');
         $routeService = new RouteService([$route2]);
@@ -73,9 +72,7 @@ class RouteServiceTest extends AbstractTest
 
     public function testGetUrlByRouteWithNoArgumentsRegex()
     {
-        /**
-         * @var Route $route2
-         */
+        /** @var MockObject|Route $route2 */
         $route2 = $this->createMock(Route::class);
         $route2->expects($this->once())->method('getPattern')->willReturn('/foo/{bar}');
         $routeService = new RouteService([$route2]);
@@ -86,9 +83,7 @@ class RouteServiceTest extends AbstractTest
 
     public function testGetUrlByRouteWithNoArguments()
     {
-        /**
-         * @var Route $route2
-         */
+        /** @var MockObject|Route $route2 */
         $route2 = $this->createMock(Route::class);
         $route2->expects($this->once())->method('getPattern')->willReturn('/foo/bar');
         $routeService = new RouteService([$route2]);
@@ -100,7 +95,7 @@ class RouteServiceTest extends AbstractTest
     public function testGetUrlByRouteWithErrorType()
     {
         $this->expectException(RuntimeException::class);
-        /** @var \PHPUnit\Framework\MockObject\MockObject|Route $route2 */
+        /** @var MockObject|Route $route2 */
         $route2 = $this->createMock(Route::class);
         $route2->expects($this->once())->method('getPattern')->willReturn('/foo/{bar:\d+}');
         $routeService = new RouteService([$route2]);
@@ -109,9 +104,7 @@ class RouteServiceTest extends AbstractTest
 
     public function testUrlFor()
     {
-        /**
-         * @var Route $route2
-         */
+        /** @var MockObject|Route $route2 */
         $route2 = $this->createMock(Route::class);
         $route2->expects($this->once())->method('getName')->willReturn('r2');
         $route2->expects($this->once())->method('getPattern')->willReturn('/foo/{bar:\d+}');

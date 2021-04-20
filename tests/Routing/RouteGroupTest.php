@@ -17,9 +17,9 @@ class RouteGroupTest extends AbstractTest
             ['GET'], '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/foo/bar');
+        $this->assertEquals('/foo/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testAddWithSetPrefix()
@@ -32,9 +32,9 @@ class RouteGroupTest extends AbstractTest
             ['GET'], '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/abc/bar');
+        $this->assertEquals('/abc/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testGetRoutes()
@@ -61,9 +61,9 @@ class RouteGroupTest extends AbstractTest
             '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/foo/bar');
+        $this->assertEquals('/foo/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testTraitPost()
@@ -75,9 +75,9 @@ class RouteGroupTest extends AbstractTest
             '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/foo/bar');
+        $this->assertEquals('/foo/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testTraitPut()
@@ -89,9 +89,9 @@ class RouteGroupTest extends AbstractTest
             '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/foo/bar');
+        $this->assertEquals('/foo/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testTraitDelete()
@@ -103,9 +103,9 @@ class RouteGroupTest extends AbstractTest
             '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/foo/bar');
+        $this->assertEquals('/foo/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testTraitOptions()
@@ -117,9 +117,9 @@ class RouteGroupTest extends AbstractTest
             '/bar', 'handler', [$middleware2], 'name'
         );
         $this->assertInstanceOf(Route::class, $route);
-        $this->assertEquals($route->getPattern(), '/foo/bar');
+        $this->assertEquals('/foo/bar', $route->getPattern());
         $this->assertEquals($route->getMiddlewares(), [$middleware1, $middleware2]);
-        $this->assertEquals($route->getName(), 'name');
+        $this->assertEquals('name', $route->getName());
     }
 
     public function testDerive()

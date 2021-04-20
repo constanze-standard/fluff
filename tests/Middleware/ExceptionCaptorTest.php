@@ -2,6 +2,7 @@
 
 use ConstanzeStandard\Fluff\Middleware\ExceptionCaptor;
 use Nyholm\Psr7\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
@@ -53,7 +54,7 @@ class ExceptionCaptorTest extends AbstractTest
         $response = new Response(200, [], ' ');
         /** @var ServerRequestInterface $mockRequest */
         $mockRequest = $this->createMock(ServerRequestInterface::class);
-        /** @var \PHPUnit\Framework\MockObject\MockObject|RequestHandlerInterface $mockHandler */
+        /** @var MockObject|RequestHandlerInterface $mockHandler */
         $mockHandler = $this->createMock(RequestHandlerInterface::class);
         $mockHandler->expects($this->once())->method('handle')->willThrowException(new \Exception());
         $result = $middleware->process($mockRequest, $mockHandler);

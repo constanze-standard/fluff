@@ -12,6 +12,9 @@ require_once __DIR__ . '/AbstractTest.php';
 
 class ApplicationTest extends AbstractTest
 {
+    /**
+     * @throws ReflectionException
+     */
     public function testAddMiddleware()
     {
         /** @var RequestHandlerInterface $requestHandler */
@@ -26,6 +29,9 @@ class ApplicationTest extends AbstractTest
         $app->addMiddleware($middleware);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function testHandle()
     {
         /** @var RequestHandlerInterface $requestHandler */

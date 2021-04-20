@@ -51,7 +51,7 @@ class Di extends Manager implements RequestHandlerInterface, ManagerInterface
     /**
      * Get the `Di` handler definition.
      *
-     * @param \Psr\Container\ContainerInterface $container
+     * @param ContainerInterface $container
      * @return \Closure
      */
     public static function getDefinition(ContainerInterface $container): \Closure

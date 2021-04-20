@@ -1,6 +1,5 @@
 <?php
 
-use Beige\Invoker\Interfaces\InvokerInterface;
 use ConstanzeStandard\Container\Container;
 use ConstanzeStandard\Fluff\RequestHandler\Di;
 use Nyholm\Psr7\Response;
@@ -11,12 +10,12 @@ require_once __DIR__ . '/../AbstractTest.php';
 
 class StringTest
 {
-    public function index()
+    public function index(): Response
     {
         return new Response();
     }
 
-    public function __invoke()
+    public function __invoke(): Response
     {
         return $this->index();
     }

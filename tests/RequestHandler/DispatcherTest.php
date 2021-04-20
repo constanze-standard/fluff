@@ -2,12 +2,8 @@
 
 use ConstanzeStandard\Fluff\Interfaces\RouterInterface;
 use ConstanzeStandard\Fluff\RequestHandler\Args;
-use ConstanzeStandard\Fluff\Routing\DispatchInformation;
-use ConstanzeStandard\Fluff\RequestHandler\Handler;
 use ConstanzeStandard\Fluff\RequestHandler\Dispatcher;
-use ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface;
-use ConstanzeStandard\Standard\Http\Server\DispatchInformationInterface;
-use Nyholm\Psr7\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
@@ -25,16 +21,16 @@ class DispatcherTest extends AbstractTest
 
     public function testHandle()
     {
-        /** @var UriInterface $uri */
+        /** @var MockObject|UriInterface $uri */
         $uri = $this->createMock(UriInterface::class);
         $uri->expects($this->once())->method('getPath')->willReturn('');
-        /** @var ServerRequestInterface $request */
+        /** @var MockObject|ServerRequestInterface $request */
         $request = $this->createMock(ServerRequestInterface::class);
         $request->expects($this->once())->method('getUri')->willReturn($uri);
         $request->expects($this->once())->method('getMethod')->willReturn('GET');
         /** @var ResponseInterface $response */
         $response = $this->createMock(ResponseInterface::class);
-        /** @var MiddlewareInterface $middleware */
+        /** @var MockObject|MiddlewareInterface $middleware */
         $middleware = $this->createMock(MiddlewareInterface::class);
         $middleware->expects($this->once())->method('process')->willReturn($response);
 

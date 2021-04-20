@@ -40,8 +40,8 @@ interface RouteInterface
 
     /**
      * Get route name.
-     * 
-     * @return string
+     *
+     * @return string|null
      */
     public function getName(): ?string;
 
@@ -59,7 +59,7 @@ interface RouteInterface
      * 
      * @return mixed
      */
-    public function getHandler();
+    public function getHandler(): mixed;
 
     /**
      * Get the route pattern.
@@ -73,5 +73,5 @@ interface RouteInterface
      * 
      * @return array|string
      */
-    public function getHttpMethods();
+    public function getHttpMethods(): array|string;
 }

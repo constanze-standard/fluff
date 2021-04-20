@@ -36,7 +36,7 @@ trait MiddlewareHandlerTrait
      * @param MiddlewareInterface[] $middlewares
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $childHandler
-     * @return \Psr\Http\Message\ResponseInterface
+     * @return ResponseInterface
      */
     private function handleWithMiddlewares(
         array $middlewares,
@@ -56,10 +56,10 @@ trait MiddlewareHandlerTrait
     /**
      * Generate middleware stack from array of middlewares.
      *
-     * @param \ConstanzeStandard\RequestHandler\Dispatcher $requestDispatcher
+     * @param Dispatcher $requestDispatcher
      * @param MiddlewareInterface[] $middlewares
      *
-     * @return \ConstanzeStandard\RequestHandler\Dispatcher
+     * @return Dispatcher
      */
     private static function generateMiddlewareStack(Dispatcher $requestDispatcher, array $middlewares): Dispatcher
     {

@@ -71,7 +71,7 @@ class ExceptionCaptor implements MiddlewareInterface
     /**
      * Process exception handler.
      *
-     * @param \Psr\Http\Message\ServerRequestInterface $request
+     * @param ServerRequestInterface $request
      * @param \Throwable $e
      *
      * @return ResponseInterface

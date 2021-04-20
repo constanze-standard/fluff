@@ -42,6 +42,7 @@ class EndOutputBuffer implements MiddlewareInterface
      *
      * @param int $targetLevel
      * @param bool $isFlush
+     * @noinspection PhpSameParameterValueInspection
      */
     private static function closeOutputBuffers(int $targetLevel, bool $isFlush = true): void
     {

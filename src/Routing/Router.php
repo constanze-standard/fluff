@@ -69,7 +69,7 @@ class Router extends RouteGroupProxy implements RouterInterface
     private array $routeGroups = [];
 
     /**
-     * @param \ConstanzeStandard\Routing\Interfaces\RouteCollectionInterface|null $routeCollection
+     * @param RouteCollectionInterface|null $routeCollection
      */
     public function __construct(?RouteCollectionInterface $routeCollection = null)
     {
@@ -164,7 +164,7 @@ class Router extends RouteGroupProxy implements RouterInterface
     /**
      * Add a route data to collection.
      *
-     * @param \ConstanzeStandard\Fluff\Interfaces\RouteGroupInterface $routeGroup
+     * @param RouteGroupInterface $routeGroup
      */
     private function addRouteGroupToCollection(RouteGroupInterface $routeGroup)
     {
