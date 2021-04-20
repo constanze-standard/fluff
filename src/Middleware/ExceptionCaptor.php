@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright 2019 Alex <blldxt@gmail.com>
+ * Copyright 2019 Alex <omytty@126.com>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ use Throwable;
 /**
  * Catch the exception and generate the error response.
  * 
- * @author Alex <blldxt@gmail.com>
+ * @author Alex <omytty@126.com>
  */
 class ExceptionCaptor implements MiddlewareInterface
 {
