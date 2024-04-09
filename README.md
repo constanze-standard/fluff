@@ -1,5 +1,3 @@
-> web 开发又一次变得有趣起来了！
-
 [![GitHub license](https://img.shields.io/badge/license-Apache%202-blue)](https://github.com/constanze-standard/fluff/blob/master/LICENSE)
 
 # Fluff Micro Framework
